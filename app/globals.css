@@ -1,26 +1,545 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors */
+  --background: #F9FAFB;
+  --foreground: #111827;
+  --card: #FFFFFF;
+  --card-foreground: #111827;
+  --primary: #0EA5E9;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #0F172A;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #0EA5E9;
+  
+  /* Shadows - Modern elevation system */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+[data-theme="dark"] {
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+  --primary: #0EA5E9;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1E293B;
+  --secondary-foreground: #F1F5F9;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #334155;
+  --accent-foreground: #F1F5F9;
+  --border: #334155;
+  --input: #334155;
+  --ring: #0EA5E9;
+  
+  /* Shadows for dark mode */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  
+  /* Spacing & Borders */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.375rem;  /* 6px */
+  --radius-lg: 0.5rem;    /* 8px */
+  --radius-xl: 0.75rem;   /* 12px */
+  --radius-2xl: 1rem;     /* 16px */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Density System - Compact vs Comfortable */
+[data-density="compact"] [class~="compact:text-xs"] { font-size: 0.75rem; line-height: 1rem; }
+[data-density="compact"] [class~="compact:py-1"] { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+[data-density="compact"] [class~="compact:px-2"] { padding-left: 0.5rem; padding-right: 0.5rem; }
+[data-density="compact"] [class~="compact:gap-1"] { gap: 0.25rem; }
+[data-density="compact"] [class~="compact:h-9"] { height: 2.25rem; }
+[data-density="compact"] [class~="compact:rounded-md"] { border-radius: var(--radius-md); }
+[data-density="compact"] [class~="compact:leading-tight"] { line-height: 1.25; }
+[data-density="compact"] [class~="compact:space-y-1"] > * + * { margin-top: 0.25rem; }
+
+/* Global compact reductions */
+[data-density="compact"] button { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+[data-density="compact"] input, 
+[data-density="compact"] select { height: 2.5rem; }
+[data-density="compact"] .card-compact { padding: 1rem; }
+[data-density="compact"] .table-compact td, 
+[data-density="compact"] .table-compact th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+/* Cursor Pointer for Interactive Elements */
+button,
+a,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+label[for],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+[disabled] {
+  cursor: not-allowed;
+}
+
+/* Links should always show pointer */
+a:not([disabled]) {
+  cursor: pointer;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+/* Scrollbar Styles - Modern & Sleek */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 10px;
+  border: 2px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+}
+
+/* Smooth transitions */
+.transition-theme {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus ring utilities - Removed focus outlines and shadows */
+*:focus-visible,
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove all focus and hover shadows from form elements */
+input:focus,
+input:focus-visible,
+input:hover,
+select:focus,
+select:focus-visible,
+select:hover,
+textarea:focus,
+textarea:focus-visible,
+textarea:hover {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Modern animations - Smooth & Polished */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--accent) 50%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Accessibility Improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Sidebar Tooltip - For collapsed sidebar items */
+.sidebar-tooltip {
+  position: relative;
+}
+
+.sidebar-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 50;
+  box-shadow: var(--shadow-lg);
+}
+
+.sidebar-tooltip::before {
+  content: '';
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: var(--foreground);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 51;
+}
+
+.sidebar-tooltip:hover::after,
+.sidebar-tooltip:hover::before {
+  opacity: 1;
+}
+
+/* Ensure perfect icon centering when collapsed */
+.sidebar-collapsed-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Sidebar navigation item when collapsed */
+.sidebar-item-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.625rem 0;
+}
+
+/* Prevent text breaking during sidebar transition */
+.sidebar-transition {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width, margin;
+}
+
+/* Ensure text doesn't break during collapse */
+.sidebar-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dark Mode Text Overrides - Ensure white text on dark backgrounds */
+[data-theme="dark"] .stat-card-title {
+  color: var(--foreground) !important;
+}
+
+/* Dark mode: upgrade muted text to foreground for better contrast */
+[data-theme="dark"] .text-muted-foreground {
+  color: var(--foreground) !important;
+}
+
+/* Dark mode: ensure opacity variants of muted text remain visible */
+[data-theme="dark"] .text-muted-foreground\/50 {
+  color: color-mix(in srgb, var(--foreground) 50%, transparent) !important;
+}
+[data-theme="dark"] .text-muted-foreground\/60 {
+  color: color-mix(in srgb, var(--foreground) 60%, transparent) !important;
+}
+[data-theme="dark"] .text-muted-foreground\/70 {
+  color: color-mix(in srgb, var(--foreground) 70%, transparent) !important;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Next UI Select - Ensure arrow is always on the right end side */
+[data-slot="trigger"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  position: relative !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[data-slot="trigger"]:focus,
+[data-slot="trigger"]:focus-visible,
+[data-slot="trigger"]:hover {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[data-slot="trigger"] [data-slot="value"] {
+  flex: 1;
+  text-align: left;
+  padding-right: 2rem !important;
+}
+
+[data-slot="trigger"] [data-slot="selectorIcon"] {
+  position: absolute !important;
+  right: 0.75rem !important;
+  top: 50% !important;
+  transform: translate(0, -50%) !important;
+  transform-origin: center center !important;
+  order: 2 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  flex-shrink: 0 !important;
+  pointer-events: none !important;
+  transition: transform 200ms ease !important;
+  will-change: transform !important;
+}
+
+[data-slot="trigger"][data-open="true"] [data-slot="selectorIcon"] {
+  transform: translate(0, -50%) rotate(180deg) !important;
+  transform-origin: center center !important;
+}
+
+/* NextUI SelectItem - Prevent text truncation, keep on single line */
+[data-slot="base"] [data-slot="title"],
+[data-slot="base"] [data-slot="description"] {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* NextUI Listbox - Allow full text display on single line */
+[data-slot="listbox"] [data-slot="base"] {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* NextUI Popover Content - Allow expansion for full text */
+[data-slot="popoverContent"] {
+  min-width: fit-content !important;
+  width: max-content !important;
+}
+
+/* Ensure icons maintain their width when aligned with titles */
+.flex.items-center.gap-2 svg,
+.flex.items-center.gap-2 [class*="lucide"],
+.flex.items-center.gap-3 svg,
+.flex.items-center.gap-3 [class*="lucide"] {
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: fit-content !important;
+}
+
+/* Icons in flex containers with gap-2.5 (using attribute selector to handle dot in class name) */
+[class*="gap-2.5"].flex.items-center svg,
+[class*="gap-2.5"].flex.items-center [class*="lucide"] {
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: fit-content !important;
+}
+
+/* CardTitle with icons - ensure icons don't shrink */
+[class*="CardTitle"].flex.items-center svg,
+[class*="CardTitle"].flex.items-center [class*="lucide"] {
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: fit-content !important;
+}
+
+/* Ensure all icons in flex containers maintain size */
+.flex svg[class*="h-"],
+.flex [class*="lucide"][class*="h-"] {
+  flex-shrink: 0 !important;
 }

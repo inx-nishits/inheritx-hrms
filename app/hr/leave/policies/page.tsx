@@ -1,0 +1,21 @@
+"use client";
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { FileText } from 'lucide-react';
+
+export default function HRLeavePoliciesPage() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Leave Policies</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Manage leave policies and rules</p>
+      </div>
+      <Card className="border border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <p className="text-sm text-muted-foreground">Leave policies management coming soon...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
