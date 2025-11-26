@@ -9,7 +9,7 @@ import {
   Save,
   Building,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Clock
 } from 'lucide-react';
 import { NextUISelect } from '@/components/ui/NextUISelect';
@@ -21,7 +21,7 @@ export default function HRSettingsPage() {
     { id: 'general', label: 'General', icon: Settings },
     { id: 'organization', label: 'Organization', icon: Building },
     { id: 'leave', label: 'Leave Policies', icon: Calendar },
-    { id: 'payroll', label: 'Payroll', icon: DollarSign },
+    { id: 'payroll', label: 'Payroll', icon: IndianRupee },
     { id: 'attendance', label: 'Attendance', icon: Clock },
   ];
 

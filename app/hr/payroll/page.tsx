@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Input } from '@/components/ui/Input';
 import { 
-  DollarSign, 
+  IndianRupee, 
   Search, 
   Filter,
   Download,
@@ -22,6 +22,7 @@ import { NextUISelect } from '@/components/ui/NextUISelect';
 import Link from 'next/link';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { formatCurrency } from '@/lib/utils';
 
 export default function HRPayrollPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,7 +76,7 @@ export default function HRPayrollPage() {
           </Button>
           <Link href="/hr/payroll/process">
             <Button>
-              <DollarSign className="h-4 w-4 mr-2" />
+              <IndianRupee className="h-4 w-4 mr-2" />
               Process Payroll
             </Button>
           </Link>
@@ -92,7 +93,7 @@ export default function HRPayrollPage() {
                 <p className="text-2xl font-bold text-foreground">{stats.totalEmployees}</p>
               </div>
               <div className="p-3 bg-blue-100 dark:bg-blue-500/25 rounded-lg">
-                <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                <IndianRupee className="h-5 w-5 text-blue-600 dark:text-blue-300" />
               </div>
             </div>
           </CardContent>
@@ -134,7 +135,9 @@ export default function HRPayrollPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Gross Salary</p>
-                <p className="text-xl font-bold text-foreground">${(stats.totalGrossSalary / 1000).toFixed(1)}K</p>
+                <p className="text-xl font-bold text-foreground">
+                  {formatCurrency(stats.totalGrossSalary)}
+                </p>
               </div>
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -146,7 +149,9 @@ export default function HRPayrollPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Deductions</p>
-                <p className="text-xl font-bold text-foreground">${(stats.totalDeductions / 1000).toFixed(1)}K</p>
+                <p className="text-xl font-bold text-foreground">
+                  {formatCurrency(stats.totalDeductions)}
+                </p>
               </div>
               <AlertCircle className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -158,9 +163,11 @@ export default function HRPayrollPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Net Salary</p>
-                <p className="text-xl font-bold text-foreground">${(stats.totalNetSalary / 1000).toFixed(1)}K</p>
+                <p className="text-xl font-bold text-foreground">
+                  {formatCurrency(stats.totalNetSalary)}
+                </p>
               </div>
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <IndianRupee className="h-5 w-5 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -234,7 +241,7 @@ export default function HRPayrollPage() {
             </div>
             {filteredRecords.length === 0 ? (
               <div className="text-center py-12">
-                <DollarSign className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <IndianRupee className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">No payroll records found</p>
               </div>
             ) : (
@@ -254,13 +261,19 @@ export default function HRPayrollPage() {
                     </div>
                   </div>
                   <div className="col-span-2 flex items-center">
-                    <span className="text-sm font-semibold text-foreground">${record.grossSalary.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatCurrency(record.grossSalary)}
+                    </span>
                   </div>
                   <div className="col-span-2 flex items-center">
-                    <span className="text-sm text-foreground">${record.deductions.toLocaleString()}</span>
+                    <span className="text-sm text-foreground">
+                      {formatCurrency(record.deductions)}
+                    </span>
                   </div>
                   <div className="col-span-2 flex items-center">
-                    <span className="text-sm font-bold text-foreground">${record.netSalary.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-foreground">
+                      {formatCurrency(record.netSalary)}
+                    </span>
                   </div>
                   <div className="col-span-2 flex items-center">
                     <span className="text-sm text-foreground">{record.period}</span>

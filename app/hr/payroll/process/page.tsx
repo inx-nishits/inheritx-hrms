@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { DollarSign, ArrowLeft } from 'lucide-react';
+import { IndianRupee, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { NextUISelect } from '@/components/ui/NextUISelect';
 
@@ -26,7 +26,7 @@ export default function HRPayrollProcessPage() {
       <Card className="border border-border/60 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
+            <IndianRupee className="h-4 w-4 text-primary" />
             Payroll Processing
           </CardTitle>
         </CardHeader>
@@ -43,7 +43,7 @@ export default function HRPayrollProcessPage() {
             />
           </div>
           <Button className="w-full">
-            <DollarSign className="h-4 w-4 mr-2" />
+            <IndianRupee className="h-4 w-4 mr-2" />
             Process Payroll
           </Button>
         </CardContent>

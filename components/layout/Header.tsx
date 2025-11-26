@@ -2,12 +2,13 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, Menu, Moon, Search, Sun, User, LogOut, KeyRound, PanelLeftClose, PanelLeftOpen, Mail, Phone, Building, Briefcase, Calendar, MapPin, DollarSign, Lock } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun, User, LogOut, KeyRound, PanelLeftClose, PanelLeftOpen, Mail, Phone, Building, Briefcase, Calendar, MapPin, IndianRupee, Lock } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Avatar } from '../ui/Avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { leaveRequests, payrollRecords, type Employee } from '@/lib/mockData';
+import { formatCurrency } from '@/lib/utils';
 import { getEmployees, StoredEmployee } from '@/lib/storage';
 import { ChangePasswordModal } from '../ui/ChangePasswordModal';
 import { Modal } from '../ui/Modal';
@@ -356,7 +357,9 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {payroll.payPeriod}
-                          {user?.role === 'hr' && ` • $${payroll.netSalary.toLocaleString()}`}
+                          {user?.role === 'hr' && (
+                            <> • {formatCurrency(payroll.netSalary)}</>
+                          )}
                         </p>
                       </button>
                     ))}
@@ -638,11 +641,11 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                   <Lock className="h-3 w-3 text-muted-foreground" />
                 </div>
                 <div className="flex items-start gap-3">
-                  <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <IndianRupee className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">Annual Salary</p>
                     <p className="text-sm font-medium text-foreground">
-                      ${selectedEmployee.salary.toLocaleString()}
+                      {formatCurrency(selectedEmployee.salary)}
                     </p>
                   </div>
                 </div>

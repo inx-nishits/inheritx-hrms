@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { DollarSign } from 'lucide-react';
 
 export default function HRPayrollSalaryPage() {
   return (

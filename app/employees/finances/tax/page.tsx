@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
 import { FileText, Edit } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { formatCurrency } from '@/lib/utils';
 
 export default function FinancesTaxPage() {
   const taxInfo = {
@@ -42,11 +43,11 @@ export default function FinancesTaxPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">YTD Tax Paid</span>
-                <span className="font-medium">${taxInfo.ytdTax.toLocaleString()}</span>
+                <span className="font-medium">{formatCurrency(taxInfo.ytdTax)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Projected Tax</span>
-                <span className="font-medium">${taxInfo.projectedTax.toLocaleString()}</span>
+                <span className="font-medium">{formatCurrency(taxInfo.projectedTax)}</span>
               </div>
             </div>
           </Card>
@@ -65,7 +66,7 @@ export default function FinancesTaxPage() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-medium text-foreground">Section {investment.section}</span>
                     <Badge variant="secondary">
-                      ${investment.amount.toLocaleString()} / ${investment.limit.toLocaleString()}
+                      {formatCurrency(investment.amount)} / {formatCurrency(investment.limit)}
                     </Badge>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">

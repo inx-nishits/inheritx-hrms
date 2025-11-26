@@ -3,15 +3,15 @@
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { motion } from 'framer-motion';
-import { Wallet, DollarSign, TrendingUp, CreditCard } from 'lucide-react';
+import { Wallet, IndianRupee, TrendingUp, CreditCard } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 export default function FinancesSummaryPage() {
   const stats = [
-    { label: 'Current Salary', value: '$95,000', icon: DollarSign, color: 'text-green-600' },
-    { label: 'YTD Earnings', value: '$95,000', icon: TrendingUp, color: 'text-blue-600' },
-    { label: 'YTD Deductions', value: '$8,000', icon: CreditCard, color: 'text-red-600' },
-    { label: 'Net Pay YTD', value: '$87,000', icon: Wallet, color: 'text-purple-600' },
+    { label: 'Current Salary', value: '₹95,000', icon: IndianRupee, color: 'text-green-600' },
+    { label: 'YTD Earnings', value: '₹95,000', icon: TrendingUp, color: 'text-blue-600' },
+    { label: 'YTD Deductions', value: '₹8,000', icon: CreditCard, color: 'text-red-600' },
+    { label: 'Net Pay YTD', value: '₹87,000', icon: Wallet, color: 'text-purple-600' },
   ];
 
   return (
@@ -61,7 +61,7 @@ export default function FinancesSummaryPage() {
               >
                 <div>
                   <p className="font-semibold text-foreground">{month}</p>
-                  <p className="text-sm text-muted-foreground">Net Pay: $7,666.67</p>
+                  <p className="text-sm text-muted-foreground">Net Pay: ₹7,666.67</p>
                 </div>
                 <Badge variant="default">Download</Badge>
               </motion.div>

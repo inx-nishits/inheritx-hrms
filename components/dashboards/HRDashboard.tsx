@@ -9,7 +9,7 @@ import {
   Users, 
   Calendar, 
   Clock, 
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   AlertCircle,
   CheckCircle2,
@@ -85,7 +85,7 @@ export default function HRDashboard() {
 
   const quickActions = [
     { name: 'Add Employee', icon: UserPlus, href: '/hr/employees/add', color: 'blue' },
-    { name: 'Process Payroll', icon: DollarSign, href: '/hr/payroll/process', color: 'green' },
+    { name: 'Process Payroll', icon: IndianRupee, href: '/hr/payroll/process', color: 'green' },
     { name: 'View Reports', icon: BarChart3, href: '/hr/reports', color: 'indigo' },
     { name: 'Manage Policies', icon: FileText, href: '/hr/settings', color: 'amber' },
   ];
@@ -199,7 +199,7 @@ export default function HRDashboard() {
                   <p className="text-2xl font-bold text-foreground">{stats.payrollProcessed}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 dark:bg-emerald-500/25 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+                  <IndianRupee className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 </div>
               </div>
             </CardContent>

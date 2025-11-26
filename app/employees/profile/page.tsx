@@ -14,7 +14,6 @@ import {
   Phone, 
   MapPin, 
   Briefcase, 
-  DollarSign,
   ChevronDown,
   ChevronUp,
   Save,

@@ -15,7 +15,7 @@ import {
   FileText,
   UserCheck,
   Calendar,
-  DollarSign,
+  IndianRupee,
 } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
@@ -82,7 +82,7 @@ const getRequestIcon = (type: Request['type']) => {
     case 'leave':
       return Calendar;
     case 'expense':
-      return DollarSign;
+      return IndianRupee;
     case 'attendance':
       return Clock;
     case 'profile':

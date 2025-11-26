@@ -10,7 +10,7 @@ import {
   TrendingUp,
   Users,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Clock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -25,7 +25,7 @@ export default function HRReportsPage() {
   const reportTypes = [
     { value: 'attendance', label: 'Attendance Report', icon: Clock },
     { value: 'leave', label: 'Leave Report', icon: Calendar },
-    { value: 'payroll', label: 'Payroll Report', icon: DollarSign },
+    { value: 'payroll', label: 'Payroll Report', icon: IndianRupee },
     { value: 'employee', label: 'Employee Report', icon: Users },
   ];
 
@@ -161,7 +161,7 @@ export default function HRReportsPage() {
               </div>
               <div className="p-4 bg-muted/30 rounded-[8px] border border-border/40">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Payroll</p>
-                <p className="text-2xl font-bold text-foreground">$2.05M</p>
+                <p className="text-2xl font-bold text-foreground">₹2.05M</p>
               </div>
             </div>
 

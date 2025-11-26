@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { NextUISelect } from '@/components/ui/NextUISelect';
 import { Button } from '@/components/ui/Button';
 import { InfoTooltip } from '@/components/ui/Tooltip';
-import { DollarSign, Save, X, CheckCircle2 } from 'lucide-react';
+import { IndianRupee, Save, X, CheckCircle2 } from 'lucide-react';
 
 interface CompensationData {
   enablePayroll: boolean;
@@ -72,7 +72,7 @@ export function CompensationSection({
         <CardHeader>
           <div className="flex items-center gap-2">
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <IndianRupee className="h-5 w-5 text-primary" />
               Compensation
             </CardTitle>
             <InfoTooltip content="Salary details are managed by HR. Contact HR to request a review." />
@@ -137,7 +137,7 @@ export function CompensationSection({
       <CardHeader>
         <div className="flex items-center gap-2">
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
+            <IndianRupee className="h-5 w-5 text-primary" />
             Compensation
           </CardTitle>
           <InfoTooltip content="Add or review salary and payroll settings for this employee. These details determine payroll calculation, PF/ESI eligibility, and applicable tax regime." />

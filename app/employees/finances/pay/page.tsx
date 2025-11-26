@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
 import { Download, Mail } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { formatCurrency } from '@/lib/utils';
 
 export default function FinancesPayPage() {
   const payslip = {
@@ -61,23 +62,25 @@ export default function FinancesPayPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Basic Salary</span>
-                  <span className="font-medium">${payslip.earnings.basic.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.earnings.basic)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">HRA</span>
-                  <span className="font-medium">${payslip.earnings.hra.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.earnings.hra)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Transport Allowance</span>
-                  <span className="font-medium">${payslip.earnings.transport.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.earnings.transport)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Other Allowances</span>
-                  <span className="font-medium">${payslip.earnings.other.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.earnings.other)}</span>
                 </div>
                 <div className="border-t border-border pt-2 mt-2 flex justify-between">
                   <span className="font-semibold text-foreground">Total Earnings</span>
-                  <span className="font-bold text-green-600">${payslip.earnings.total.toFixed(2)}</span>
+                  <span className="font-bold text-green-600">
+                    {formatCurrency(payslip.earnings.total)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -87,23 +90,25 @@ export default function FinancesPayPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Income Tax</span>
-                  <span className="font-medium">${payslip.deductions.tax.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.deductions.tax)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Provident Fund</span>
-                  <span className="font-medium">${payslip.deductions.pf.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.deductions.pf)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Insurance</span>
-                  <span className="font-medium">${payslip.deductions.insurance.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.deductions.insurance)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Other Deductions</span>
-                  <span className="font-medium">${payslip.deductions.other.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(payslip.deductions.other)}</span>
                 </div>
                 <div className="border-t border-border pt-2 mt-2 flex justify-between">
                   <span className="font-semibold text-foreground">Total Deductions</span>
-                  <span className="font-bold text-red-600">${payslip.deductions.total.toFixed(2)}</span>
+                  <span className="font-bold text-red-600">
+                    {formatCurrency(payslip.deductions.total)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -112,7 +117,9 @@ export default function FinancesPayPage() {
           <div className="mt-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold text-foreground">Net Pay</span>
-              <span className="text-2xl font-bold text-primary">${payslip.netPay.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-primary">
+                {formatCurrency(payslip.netPay)}
+              </span>
             </div>
           </div>
         </Card>
