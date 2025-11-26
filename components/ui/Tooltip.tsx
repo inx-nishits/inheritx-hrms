@@ -78,12 +78,28 @@ export function Tooltip({ children, content, side = 'top', className, asChild }:
   }, [isVisible, side]);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      onMouseEnter: () => setIsVisible(true),
-      onMouseLeave: () => setIsVisible(false),
-      onFocus: () => setIsVisible(true),
-      onBlur: () => setIsVisible(false),
-      'aria-describedby': content ? tooltipId : undefined,
+    const element = children as React.ReactElement<
+      React.HTMLAttributes<HTMLElement> & { 'aria-describedby'?: string }
+    >;
+
+    return React.cloneElement(element, {
+      onMouseEnter: (event: React.MouseEvent<HTMLElement>) => {
+        element.props.onMouseEnter?.(event);
+        setIsVisible(true);
+      },
+      onMouseLeave: (event: React.MouseEvent<HTMLElement>) => {
+        element.props.onMouseLeave?.(event);
+        setIsVisible(false);
+      },
+      onFocus: (event: React.FocusEvent<HTMLElement>) => {
+        element.props.onFocus?.(event);
+        setIsVisible(true);
+      },
+      onBlur: (event: React.FocusEvent<HTMLElement>) => {
+        element.props.onBlur?.(event);
+        setIsVisible(false);
+      },
+      'aria-describedby': content ? tooltipId : element.props['aria-describedby'],
     });
   }
 

@@ -3,7 +3,7 @@
 import { Select, SelectItem, SelectProps } from '@nextui-org/react';
 import { cn } from '@/lib/utils';
 
-interface NextUISelectProps extends Omit<SelectProps, 'selectedKeys' | 'onSelectionChange' | 'children'> {
+interface NextUISelectProps extends Omit<SelectProps, 'selectedKeys' | 'onSelectionChange' | 'children' | 'onChange'> {
   value?: string;
   onChange?: (value: string) => void;
   options: Array<{ value: string; label: string } | string>;
@@ -29,7 +29,8 @@ export function NextUISelect({
   const selectedKeys = value ? new Set([value]) : new Set<string>();
 
   // Determine wrapper width - use custom base width if provided, otherwise default to w-full
-  const hasCustomWidth = classNames?.base?.includes('w-');
+  const baseClass = classNames?.base;
+  const hasCustomWidth = typeof baseClass === 'string' && baseClass.includes('w-');
   const wrapperWidth = hasCustomWidth ? '' : 'w-full';
 
   // Default trigger classes
@@ -63,18 +64,14 @@ export function NextUISelect({
           listboxWrapper: classNames?.listboxWrapper,
         }}
         popoverProps={{
-          placement: "auto",
           classNames: {
             content: "bg-background border border-border rounded-[8px] shadow-lg p-1 max-w-[calc(100vw-16px)] min-w-fit",
           },
           offset: 4,
-          shouldFlip: true,
           shouldCloseOnBlur: true,
           isDismissable: true,
           isKeyboardDismissDisabled: false,
           containerPadding: 8,
-          flip: true,
-          boundary: "clippingParents",
         }}
         listboxProps={{
           itemClasses: {

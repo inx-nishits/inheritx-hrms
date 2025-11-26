@@ -2,13 +2,15 @@ import { cn, getInitials } from '@/lib/utils';
 import React from 'react';
 
 interface AvatarProps {
-  name: string | undefined | null;
+  name?: string | null;
   src?: string;
+  alt?: string;
+  fallback?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
-export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
+export function Avatar({ name, src, alt, fallback, size = 'md', className }: AvatarProps) {
   const sizes = {
     sm: 'h-9 w-9 text-xs',
     md: 'h-11 w-11 text-sm',
@@ -16,11 +18,13 @@ export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
     xl: 'h-20 w-20 text-xl',
   };
 
+  const label = alt || name || 'Avatar';
+
   if (src) {
     return (
       <img
         src={src}
-        alt={name || 'Avatar'}
+        alt={label}
         className={cn('rounded-full object-cover ring-2 ring-border shadow-sm', sizes[size], className)}
       />
     );
@@ -33,9 +37,9 @@ export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
         sizes[size],
         className
       )}
-      aria-label={name || 'Avatar'}
+      aria-label={label}
     >
-      {getInitials(name)}
+      {fallback || getInitials(name || alt)}
     </div>
   );
 }

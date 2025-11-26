@@ -188,8 +188,8 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
     setShowSearchResults(false);
     // Navigate based on type
     if (type === 'employee') {
-      // Find the employee and show modal
-      const employee = employees.find(emp => emp.id === id);
+      // Find the employee in current search results and show modal
+      const employee = searchResults.employees.find(emp => emp.id === id);
       if (employee) {
         // Security check: Employees can only view their own details
         if (user?.role === 'employee' && employee.id !== user.id) {
@@ -532,8 +532,12 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h3 className="text-xl font-bold text-foreground">{selectedEmployee.name}</h3>
-                  <Badge variant={selectedEmployee.status === 'active' || selectedEmployee.status === 'Active' ? 'success' : 'default'}>
-                    {selectedEmployee.status === 'active' ? 'Active' : selectedEmployee.status === 'inactive' ? 'Inactive' : selectedEmployee.status}
+                  <Badge variant={selectedEmployee.status.toLowerCase() === 'active' ? 'success' : 'default'}>
+                    {selectedEmployee.status.toLowerCase() === 'active'
+                      ? 'Active'
+                      : selectedEmployee.status.toLowerCase() === 'inactive'
+                        ? 'Inactive'
+                        : selectedEmployee.status}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{selectedEmployee.designation}</p>
