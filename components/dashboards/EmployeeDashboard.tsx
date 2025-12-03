@@ -109,7 +109,7 @@ export default function EmployeeDashboard() {
       {/* Compact Header */}
       <div className="flex items-center justify-between pb-2 border-b border-border/50">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back, {user?.name?.split(' ')[0] || 'User'}</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back, {user?.name || 'User'}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{formatDate(currentTime)}</p>
         </div>
         <div className="text-right">
