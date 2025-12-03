@@ -8,6 +8,7 @@ export type UserRole = "employee" | "hr" | "HR Manager" | "System Admin";
 export interface User {
   id: string;
   name: string;
+  employeeId:string;
   email: string;
   role: UserRole[]; // mapped roles
   department?: string;
@@ -178,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Build final user object
     const userData: User = {
       id: apiUser.id,
+      employeeId:apiUser.employeeId,
       email: apiUser.email,
       name: apiUser.name ?? apiUser.email,
       role: mappedRoles,
