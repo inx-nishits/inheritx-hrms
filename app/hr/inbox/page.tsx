@@ -136,7 +136,7 @@ export default function HRInboxPage() {
   const rejectedRequests = requests.filter(r => r.status === 'rejected');
 
   return (
-    <ProtectedRoute allowedRoles={['hr']}>
+    <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">

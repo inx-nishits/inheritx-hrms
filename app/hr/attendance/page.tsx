@@ -64,7 +64,7 @@ export default function HRAttendancePage() {
   });
 
   return (
-    <ProtectedRoute allowedRoles={['hr']}>
+    <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
       <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

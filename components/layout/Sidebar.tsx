@@ -38,15 +38,15 @@ interface SubMenuItem {
 interface MenuItem {
   name: string;
   href?: string;
-  icon: typeof LayoutDashboard;
-  roles: UserRole[];
+  icon: React.ComponentType<any>;
+  roles: UserRole[];        // allowed roles for this menu item
   subItems?: SubMenuItem[];
 }
 
 const allMenuItems: MenuItem[] = [
   // Shared menu items
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['employee', 'hr'] },
-  
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['employee', 'hr', 'HR Manager'] },
+
   // Employee menu items
   { name: 'Attendance', href: '/employees/attendance', icon: Clock, roles: ['employee'] },
   { name: 'Profile', href: '/employees/profile', icon: User, roles: ['employee'] },
@@ -62,14 +62,14 @@ const allMenuItems: MenuItem[] = [
       { name: 'Manage Tax', href: '/employees/finances/tax' },
     ],
   },
-  
+
   // HR menu items
-  { name: 'Inbox', href: '/hr/inbox', icon: Inbox, roles: ['hr'] },
-  { name: 'Profile', href: '/hr/profile', icon: User, roles: ['hr'] },
+  { name: 'Inbox', href: '/hr/inbox', icon: Inbox, roles: ['hr', 'HR Manager'] },
+  { name: 'Profile', href: '/hr/profile', icon: User, roles: ['hr', 'HR Manager'] },
   {
     name: 'Employees',
     icon: Users,
-    roles: ['hr'],
+    roles: ['hr', 'HR Manager'],
     subItems: [
       { name: 'All Employees', href: '/hr/employees' },
       { name: 'Add Employee', href: '/hr/employees/add' },
@@ -79,18 +79,18 @@ const allMenuItems: MenuItem[] = [
   {
     name: 'Leave Management',
     icon: Calendar,
-    roles: ['hr'],
+    roles: ['hr', 'HR Manager'],
     subItems: [
       { name: 'Pending Requests', href: '/hr/leave/pending' },
       { name: 'All Leaves', href: '/hr/leave/all' },
       { name: 'Leave Policies', href: '/hr/leave/policies' },
     ],
   },
-  { name: 'Holidays', href: '/hr/holidays', icon: CalendarDays, roles: ['hr'] },
+  { name: 'Holidays', href: '/hr/holidays', icon: CalendarDays, roles: ['hr', 'HR Manager'] },
   {
     name: 'Attendance',
     icon: Clock,
-    roles: ['hr'],
+    roles: ['hr', 'HR Manager'],
     subItems: [
       { name: 'Overview', href: '/hr/attendance' },
       { name: 'Regularization', href: '/hr/attendance/regularization' },
@@ -100,23 +100,24 @@ const allMenuItems: MenuItem[] = [
   {
     name: 'Payroll',
     icon: Wallet,
-    roles: ['hr'],
+    roles: ['hr', 'HR Manager'],
     subItems: [
       { name: 'Overview', href: '/hr/payroll' },
       { name: 'Process Payroll', href: '/hr/payroll/process' },
       { name: 'Salary Structure', href: '/hr/payroll/salary' },
     ],
   },
-  { name: 'Onboarding', href: '/hr/onboarding', icon: UserCheck, roles: ['hr'] },
-  { name: 'Organization', href: '/hr/organization', icon: Building, roles: ['hr'] },
-  { name: 'Reports', href: '/hr/reports', icon: BarChart3, roles: ['hr'] },
-  { name: 'Settings', href: '/hr/settings', icon: Settings, roles: ['hr'] },
+  { name: 'Onboarding', href: '/hr/onboarding', icon: UserCheck, roles: ['hr', 'HR Manager'] },
+  { name: 'Organization', href: '/hr/organization', icon: Building, roles: ['hr', 'HR Manager'] },
+  { name: 'Reports', href: '/hr/reports', icon: BarChart3, roles: ['hr', 'HR Manager'] },
+  { name: 'Settings', href: '/hr/settings', icon: Settings, roles: ['hr', 'HR Manager'] },
 ];
 
 export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
-  const pathname = usePathname();
+  const pathnameRaw = usePathname();
+  const pathname = pathnameRaw ?? '/';
   const { user } = useAuth();
-  
+
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null);
@@ -160,21 +161,17 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
   useEffect(() => {
     if (tooltipState && collapsed) {
       const updateTooltipPosition = () => {
-        const itemName = Object.keys(itemRefs.current).find(key => {
-          return tooltipState.text === key;
-        });
-        
+        const itemName = Object.keys(itemRefs.current).find(key => tooltipState.text === key);
         if (itemName) {
           const element = itemRefs.current[itemName];
           if (element) {
             // Get the link element which contains the icon
             const linkElement = element.querySelector('a') as HTMLElement;
             if (linkElement) {
-              // Get the top position of the link element to align tooltip top
               const linkRect = linkElement.getBoundingClientRect();
               const topPos = linkRect.top;
               const leftPos = linkRect.right + 12;
-              
+
               setTooltipState({
                 text: tooltipState.text,
                 top: topPos,
@@ -190,10 +187,14 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
     }
   }, [tooltipState, collapsed]);
 
-  // Filter menu items based on user role
-  const menuItems = allMenuItems.filter(item => 
-    user && item.roles.includes(user.role)
-  );
+  // Helper: check if user's roles overlap with the allowed roles for an item
+  const userHasAnyRole = (allowedRoles: UserRole[]) => {
+    if (!user || !Array.isArray(user.role)) return false;
+    return allowedRoles.some((r) => user.role.includes(r));
+  };
+
+  // Filter menu items based on user role (dynamic)
+  const menuItems = allMenuItems.filter(item => user && userHasAnyRole(item.roles));
 
   const toggleExpand = (itemName: string) => {
     setExpandedItems(prev =>
@@ -220,8 +221,6 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
       collapsed ? "w-20" : "w-72",
       "overflow-visible"
     )}>
-      {/* Desktop Header - Removed logo */}
-      
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-end p-5 compact:p-4 border-b border-border">
         <button onClick={onClose} className="p-2.5 hover:bg-accent rounded-lg transition-colors">
@@ -250,14 +249,12 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
                     if (collapsed && !hasSubItems) {
                       const element = itemRefs.current[item.name];
                       if (element) {
-                        // Get the link element which contains the icon
                         const linkElement = element.querySelector('a') as HTMLElement;
                         if (linkElement) {
-                          // Get the top position of the link element to align tooltip top
                           const linkRect = linkElement.getBoundingClientRect();
                           const topPos = linkRect.top;
                           const leftPos = linkRect.right + 12;
-                          
+
                           setTooltipState({
                             text: item.name,
                             top: topPos,
@@ -319,7 +316,6 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
                     }
                   }}
                   onMouseLeave={(e) => {
-                    // Don't close if moving to popover or bridge
                     if (collapsed) {
                       const relatedTarget = e.relatedTarget as HTMLElement;
                       if (!relatedTarget || (!relatedTarget.closest('.sidebar-popover') && !relatedTarget.closest('[data-bridge]'))) {
@@ -371,7 +367,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
                       />
                     )}
                   </button>
-                  
+
                   {/* Expanded sub-items (when sidebar is expanded) */}
                   {hasSubItems && !collapsed && (
                     <AnimatePresence>
@@ -411,7 +407,6 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
                       )}
                     </AnimatePresence>
                   )}
-
                 </div>
               )}
             </div>
@@ -424,11 +419,11 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
         {collapsed && hoveredItem && popoverPosition && (() => {
           const item = menuItems.find(i => i.name === hoveredItem);
           if (!item?.subItems) return null;
-          
+
           const element = itemRefs.current[hoveredItem];
           const itemRect = element?.getBoundingClientRect();
           const bridgeWidth = 8; // Gap between sidebar and popover
-          
+
           return (
             <>
               {/* Invisible bridge to prevent hover gap */}
@@ -465,7 +460,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
                   }}
                 />
               )}
-              
+
               <motion.div
                 initial={{ opacity: 0, x: -10, scale: 0.95 }}
                 animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -707,4 +702,3 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
     </>
   );
 }
-

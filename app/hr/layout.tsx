@@ -8,9 +8,8 @@ export default function HRLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={['hr']}>
+    <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
       {children}
     </ProtectedRoute>
   );
 }
-

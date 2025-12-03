@@ -27,6 +27,7 @@ export default function LoginPage() {
 
     try {
       const success = await login(email, password, role);
+      console.log("success", success)
       if (success) {
         router.push('/');
       } else {

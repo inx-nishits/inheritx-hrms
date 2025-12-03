@@ -473,8 +473,9 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                   <div className="p-2.5">
                     <button 
                       onClick={() => {
+                        console.log("user?.role", user)
                         setShowProfileMenu(false);
-                        if (user?.role === 'hr') {
+                        if (user?.role?.includes('hr')) {
                           router.push('/hr/profile');
                         } else {
                           router.push('/employees/profile');

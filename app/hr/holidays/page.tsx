@@ -177,7 +177,7 @@ export default function HRHolidaysPage() {
   }).length;
 
   return (
-    <ProtectedRoute allowedRoles={['hr']}>
+    <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
       <div className="space-y-6 pb-10">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border/50">
