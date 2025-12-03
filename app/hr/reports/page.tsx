@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { 
   BarChart3, 
@@ -46,11 +46,10 @@ export default function HRReportsPage() {
       </div>
 
       {/* Report Type Selection */}
-      <Card className="border border-border/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">Select Report Type</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">Select Report Type</h2>
+        <Card className="border border-border/60 shadow-sm">
+          <CardContent className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {reportTypes.map((type) => {
               const Icon = type.icon;
@@ -90,15 +89,15 @@ export default function HRReportsPage() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filters */}
-      <Card className="border border-border/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">Report Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">Report Filters</h2>
+        <Card className="border border-border/60 shadow-sm">
+          <CardContent className="pt-4">
           <div className="space-y-4">
             {/* First Row - Period Selection */}
             <div className="flex flex-col md:flex-row gap-4">
@@ -132,18 +131,18 @@ export default function HRReportsPage() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Report Preview */}
-      <Card className="border border-border/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-primary" />
-            Report Preview
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-primary" />
+          Report Preview
+        </h2>
+        <Card className="border border-border/60 shadow-sm">
+          <CardContent className="pt-4">
           <div className="space-y-4">
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -172,8 +171,9 @@ export default function HRReportsPage() {
               <p className="text-xs text-muted-foreground mt-1">Generate a report to view detailed analytics</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

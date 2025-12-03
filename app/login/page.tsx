@@ -104,9 +104,9 @@ export default function LoginPage() {
           className="w-full"
         >
           <Card>
-            <CardHeader>
+            <CardHeader className='!px-0'>
               <CardTitle className="text-2xl">Sign In</CardTitle>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-muted-foreground mt-0">
                 Enter your credentials to access your account
               </p>
             </CardHeader>
@@ -127,6 +127,7 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       className="pl-10"
+                      autoComplete="email"
                     />
                   </div>
                 </div>
@@ -146,6 +147,7 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       className="pl-10"
+                      autoComplete="current-password"
                     />
                   </div>
                 </div>
@@ -172,34 +174,6 @@ export default function LoginPage() {
                   Sign In
                 </Button>
 
-                {/* Quick Login Buttons */}
-                <div className="pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-3 text-center">
-                    Quick Login (Demo)
-                  </p>
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => quickLogin('employee@inheritx.com', 'emp123', 'employee')}
-                      disabled={loading}
-                    >
-                      Employee Login
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => quickLogin('hr@inheritx.com', 'hr123', 'hr')}
-                      disabled={loading}
-                    >
-                      HR Manager Login
-                    </Button>
-                  </div>
-                </div>
               </form>
             </CardContent>
           </Card>
