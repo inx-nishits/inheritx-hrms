@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Input } from '@/components/ui/Input';
@@ -144,11 +144,10 @@ export default function OnboardingPage() {
         </div>
 
         {/* Onboarding Tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Onboarding Tasks</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Onboarding Tasks</h2>
+          <Card>
+            <CardContent>
             <div className="space-y-4">
               <div className="p-4 border border-border rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -162,18 +161,19 @@ export default function OnboardingPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* Placeholder for more onboarding content */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Onboarding Activities</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Recent Onboarding Activities</h2>
+          <Card>
+            <CardContent>
             <div className="text-center py-8 text-muted-foreground">
               <p>Onboarding activities will appear here</p>
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </ProtectedRoute>
   );

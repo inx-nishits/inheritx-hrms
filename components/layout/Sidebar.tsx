@@ -17,6 +17,7 @@ import {
   Building,
   UserCheck,
   CalendarDays,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -66,6 +67,7 @@ const allMenuItems: MenuItem[] = [
   // HR menu items
   { name: 'Inbox', href: '/hr/inbox', icon: Inbox, roles: ['hr', 'HR Manager'] },
   { name: 'Profile', href: '/hr/profile', icon: User, roles: ['hr', 'HR Manager'] },
+  { name: 'Roles Management', href: '/hr/roles', icon: Shield, roles: ['hr', 'HR Manager'] },
   {
     name: 'Employees',
     icon: Users,

@@ -43,4 +43,12 @@ export const apiEndPoints = {
     getSettingList: "/settings/app-updates",
     addNewVersion: "/settings/app-updates",
   },
+  roles: {
+    getRoles: "/roles",
+    getRole: (roleId: string | number) => `/roles/${roleId}`,
+    createRole: "/roles",
+    updateRole: (roleId: string | number) => `/roles/${roleId}`,
+    deleteRole: (roleId: string | number) => `/roles/${roleId}`,
+    updateRoleStatus: (roleId: string | number) => `/roles/${roleId}/status`,
+  },
 };

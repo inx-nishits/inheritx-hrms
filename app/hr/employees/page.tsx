@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -179,11 +179,10 @@ export default function HREmployeesPage() {
       </Card>
 
       {/* Employees List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Employees ({filteredEmployees.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">All Employees ({filteredEmployees.length})</h2>
+        <Card>
+          <CardContent>
           <div className="space-y-4">
             {filteredEmployees.map((employee, index) => (
               <motion.div
@@ -243,8 +242,9 @@ export default function HREmployeesPage() {
               </motion.div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
     </ProtectedRoute>
   );

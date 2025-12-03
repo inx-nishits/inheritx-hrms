@@ -213,4 +213,42 @@ export const api = {
       body: JSON.stringify(versionData),
     });
   },
+
+  // Roles Management APIs
+  getRoles: async (params?: any) => {
+    const queryString = params ? new URLSearchParams(params).toString() : '';
+    const url = queryString ? `${API_BASE_URL}${apiEndPoints.roles.getRoles}?${queryString}` : `${API_BASE_URL}${apiEndPoints.roles.getRoles}`;
+    return authenticatedFetch(url);
+  },
+
+  getRole: async (roleId: string | number) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.getRole(roleId)}`);
+  },
+
+  createRole: async (roleData: any) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.createRole}`, {
+      method: 'POST',
+      body: JSON.stringify(roleData),
+    });
+  },
+
+  updateRole: async (roleId: string | number, roleData: any) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.updateRole(roleId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(roleData),
+    });
+  },
+
+  deleteRole: async (roleId: string | number) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.deleteRole(roleId)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  updateRoleStatus: async (roleId: string | number, status: string) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.updateRoleStatus(roleId)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
 };
