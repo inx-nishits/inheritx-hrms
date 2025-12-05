@@ -12,15 +12,26 @@ import { api } from '@/lib/api';
 import { ArrowLeft, Edit, Shield } from 'lucide-react';
 import Link from 'next/link';
 
+interface Permission {
+  id: string;
+  code: string;
+  description: string;
+}
+
+interface RolePermission {
+  roleId: string;
+  permissionId: string;
+  createdAt: string;
+  permission: Permission;
+}
+
 interface Role {
   id: string;
-  organizationId: string;
   roleName: string;
   description: string;
-  status: 'active' | 'inactive';
-  permissionIds: string[];
   createdAt?: string;
-  updatedAt?: string;
+  permissions: RolePermission[];
+  users?: any[];
 }
 
 export default function ViewRolePage() {
@@ -128,16 +139,6 @@ export default function ViewRolePage() {
                   {role.roleName}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">
-                  Status
-                </label>
-                <div className="p-3">
-                  <Badge variant={role.status === 'active' ? 'default' : 'secondary'}>
-                    {role.status === 'active' ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-              </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold mb-2 text-foreground">
                   Description
@@ -148,19 +149,11 @@ export default function ViewRolePage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-2 text-foreground">
-                  Organization ID
-                </label>
-                <div className="p-3 rounded-md bg-muted/50 border border-border">
-                  {role.organizationId}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">
                   Total Permissions
                 </label>
                 <div className="p-3">
                   <Badge variant="secondary">
-                    {role.permissionIds?.length || 0} permissions
+                    {role.permissions?.length || 0} permissions
                   </Badge>
                 </div>
               </div>
@@ -174,12 +167,14 @@ export default function ViewRolePage() {
           <h2 className="text-xl font-semibold text-foreground">Permissions</h2>
           <Card>
             <CardContent>
-              {role.permissionIds && role.permissionIds.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {role.permissionIds.map((permissionId) => (
-                    <Badge key={permissionId} variant="secondary" className="text-sm">
-                      {permissionId}
-                    </Badge>
+              {role.permissions && role.permissions.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {role.permissions.map((rolePermission) => (
+                    <div key={rolePermission.permissionId} className="flex flex-col p-4 rounded-md bg-muted/30 border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                          {rolePermission.permission.description}
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -192,4 +187,3 @@ export default function ViewRolePage() {
     </ProtectedRoute>
   );
 }
-

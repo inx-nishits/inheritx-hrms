@@ -214,7 +214,7 @@ export const api = {
     });
   },
 
-  // Roles Management APIs
+  // Role Management APIs
   getRoles: async (params?: any) => {
     const queryString = params ? new URLSearchParams(params).toString() : '';
     const url = queryString ? `${API_BASE_URL}${apiEndPoints.roles.getRoles}?${queryString}` : `${API_BASE_URL}${apiEndPoints.roles.getRoles}`;
@@ -233,8 +233,9 @@ export const api = {
   },
 
   updateRole: async (roleId: string | number, roleData: any) => {
+    console.log("roleData", roleData, "roleId", roleId)
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.updateRole(roleId)}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(roleData),
     });
   },
@@ -250,5 +251,10 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
+  },
+
+  // Permissions APIs
+  getAllPermissions: async () => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.permissions.allPermissions}`);
   },
 };

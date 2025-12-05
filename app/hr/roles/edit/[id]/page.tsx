@@ -44,17 +44,16 @@ export default function EditRolePage() {
       setError(null);
       const response = await api.getRole(roleId);
       const role = response.data || response;
-      
+
       setFormData({
         roleName: role.roleName || '',
         description: role.description || '',
-        organizationId: role.organizationId || '',
+        organizationId: role.organizationId || user?.organizationId || '',
       });
-      
-      // Handle permissions - could be in permissionIds array or nested in permissions
-      const permissions = role.permissionIds || 
-        (role.permissions?.map((p: any) => p.permissionId || p.id) || []);
-      setSelectedPermissions(permissions);
+
+      // Load existing permissions for the role (using permission IDs)
+      const permissionIds = role.permissions?.map((p: any) => p.permission?.id).filter(Boolean) || [];
+      setSelectedPermissions(permissionIds);
     } catch (err) {
       console.error('Failed to fetch role:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load role. Please try again.';
@@ -187,19 +186,6 @@ export default function EditRolePage() {
                 <CardContent className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    Organization ID
-                  </label>
-                  <Input
-                    value={formData.organizationId}
-                    onChange={(e) => handleInputChange('organizationId', e.target.value)}
-                    placeholder="Organization ID"
-                    disabled
-                    className="bg-muted/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-foreground">
                     Role Name <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -207,11 +193,7 @@ export default function EditRolePage() {
                     onChange={(e) => handleInputChange('roleName', e.target.value)}
                     placeholder="e.g., HR Manager, Admin, etc."
                     error={errors.roleName}
-                    required
                   />
-                  {errors.roleName && (
-                    <p className="text-sm text-red-500 mt-1">{errors.roleName}</p>
-                  )}
                 </div>
 
                 <div>
@@ -265,4 +247,3 @@ export default function EditRolePage() {
     </ProtectedRoute>
   );
 }
-

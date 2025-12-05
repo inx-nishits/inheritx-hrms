@@ -13,6 +13,7 @@ export interface User {
   role: UserRole[]; // mapped roles
   department?: string;
   avatar?: string;
+  organizationId?: string;
 }
 
 interface AuthContextType {
@@ -184,7 +185,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: apiUser.name ?? apiUser.email,
       role: mappedRoles,
       department: apiUser.department,
-      avatar: apiUser.avatar
+      avatar: apiUser.avatar,
+      organizationId: apiUser.organizationId
     };
 
     setUser(userData);
@@ -269,4 +271,3 @@ export function useAuth(): AuthContextType {
   }
   return context;
 }
-

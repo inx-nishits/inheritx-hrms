@@ -7,6 +7,10 @@ export const apiEndPoints = {
     resetPassword: "/reset-password",
     changePassword: "/change-password",
   },
+  permissions: {
+    allPermissions: "/permissions/all",
+    permissionsList: "/permissions",
+  },
   profile: {
     getProfile: (id: string | number) => `/users/${id}`,
     updateProfile: (id: string | number) => `/users/${id}`,
@@ -22,26 +26,11 @@ export const apiEndPoints = {
       return `/user-management/users/${userId}/status`;
     },
   },
-  post: {
-    getPostList: "/post-management/posts/flagged",
-    deletePost: "/post-management/posts",
-    resolvedPost: "/post-management/posts",
-  },
-  contactusQueries: {
-    getQueries: "/contact-us/queries",
-    updateQueryStatus: (queryId: string | number) => {
-      return `/contact-us/queries/${queryId}/status`;
-    },
-  },
   content: {
     getContentData: (contentType: string | number) => {
       return `/content-management/${contentType}`;
     },
     addContentData: "/content-management",
-  },
-  setting: {
-    getSettingList: "/settings/app-updates",
-    addNewVersion: "/settings/app-updates",
   },
   roles: {
     getRoles: "/roles",
