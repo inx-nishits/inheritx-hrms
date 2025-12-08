@@ -69,9 +69,9 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
           emp.employeeId.toLowerCase().includes(query);
         
         // HR can see all matching employees, employees only see themselves
-        if (user?.role === 'hr') {
+        if (user?.role.includes('hr')) {
           return matchesQuery;
-        } else if (user?.role === 'employee') {
+        } else if (user?.role.includes('employee')) {
           // Employees can see themselves if they match
           return matchesQuery && emp.email === user.email;
         }
@@ -85,9 +85,9 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
           leave.reason.toLowerCase().includes(query);
         
         // HR can see all matching leaves, employees only see their own
-        if (user?.role === 'hr') {
+        if (user?.role.includes('hr')) {
           return matchesQuery;
-        } else if (user?.role === 'employee') {
+        } else if (user?.role.includes('employee')) {
           return matchesQuery && leave.employeeId === user.id;
         }
         return false;
@@ -99,9 +99,9 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
           payroll.payPeriod.toLowerCase().includes(query);
         
         // HR can see all matching payroll, employees only see their own
-        if (user?.role === 'hr') {
+        if (user?.role.includes('hr')) {
           return matchesQuery;
-        } else if (user?.role === 'employee') {
+        } else if (user?.role.includes('employee')) {
           return matchesQuery && payroll.employeeId === user.id;
         }
         return false;
@@ -193,7 +193,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
       const employee = searchResults.employees.find(emp => emp.id === id);
       if (employee) {
         // Security check: Employees can only view their own details
-        if (user?.role === 'employee' && employee.id !== user.id) {
+        if (user?.role.includes('employee') && employee.id !== user.id) {
           // Employee trying to view another employee - redirect to own profile
           router.push('/employees/profile');
           return;
@@ -203,13 +203,13 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
         setShowEmployeeModal(true);
       }
     } else if (type === 'leave') {
-      if (user?.role === 'employee') {
+      if (user?.role.includes('employee')) {
         router.push('/employees/leave');
       } else {
         router.push('/hr/leave/pending');
       }
     } else if (type === 'payroll') {
-      if (user?.role === 'employee') {
+      if (user?.role.includes('employee')) {
         router.push('/employees/finances/pay');
       } else {
         router.push('/hr/payroll');
@@ -259,7 +259,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
           <input
             type="text"
-            placeholder={user?.role === 'hr' ? "Search employees, leaves, payroll..." : "Search my leaves, payroll..."}
+            placeholder={user?.role.includes('hr') ? "Search employees, leaves, payroll..." : "Search my leaves, payroll..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
@@ -277,7 +277,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                 className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg z-50 shadow-lg max-h-96 overflow-y-auto mx-4"
               >
                 {/* Employees Results - Only show for HR, employees should not see other employees */}
-                {searchResults.employees.length > 0 && user?.role === 'hr' && (
+                {searchResults.employees.length > 0 && user?.role.includes('hr') && (
                   <div className="p-2">
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Employees ({searchResults.employees.length})
@@ -298,7 +298,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                   </div>
                 )}
                 {/* Employees Results - For employees, only show themselves */}
-                {searchResults.employees.length > 0 && user?.role === 'employee' && (
+                {searchResults.employees.length > 0 && user?.role.includes('employee') && (
                   <div className="p-2">
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       My Profile
@@ -332,7 +332,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                         className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors"
                       >
                         <p className="text-sm font-semibold text-foreground">
-                          {user?.role === 'hr' ? leave.employeeName : 'My Leave Request'}
+                          {user?.role.includes('hr') ? leave.employeeName : 'My Leave Request'}
                         </p>
                         <p className="text-xs text-muted-foreground">{leave.leaveType} • {leave.startDate} to {leave.endDate}</p>
                       </button>
@@ -353,11 +353,11 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                         className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors"
                       >
                         <p className="text-sm font-semibold text-foreground">
-                          {user?.role === 'hr' ? payroll.employeeName : 'My Payslip'}
+                          {user?.role.includes('hr') ? payroll.employeeName : 'My Payslip'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {payroll.payPeriod}
-                          {user?.role === 'hr' && (
+                          {user?.role.includes('hr') && (
                             <> • {formatCurrency(payroll.netSalary)}</>
                           )}
                         </p>
@@ -635,7 +635,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
             </div>
 
             {/* Salary Information - Only visible to HR */}
-            {user?.role === 'hr' && selectedEmployee.salary && (
+            {user?.role.includes('hr') && selectedEmployee.salary && (
               <div className="space-y-4 pt-4 border-t border-border">
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide">Compensation</h4>
@@ -660,7 +660,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t border-border">
-              {user?.role === 'hr' && (
+              {user?.role.includes('hr') && (
                 <button
                   onClick={() => {
                     setShowEmployeeModal(false);
@@ -672,7 +672,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
                   View Full Profile
                 </button>
               )}
-              {user?.role === 'employee' && (
+              {user?.role.includes('employee') && (
                 <button
                   onClick={() => {
                     setShowEmployeeModal(false);
@@ -700,4 +700,3 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed = false 
     </header>
   );
 }
-

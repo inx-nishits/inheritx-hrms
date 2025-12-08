@@ -22,7 +22,7 @@ export default function HomePage() {
   }
 
   // Route to appropriate dashboard based on role
-  if (user.role === 'hr') {
+  if (user.role.includes('HR Manager')) {
     return <HRDashboard />;
   }
 

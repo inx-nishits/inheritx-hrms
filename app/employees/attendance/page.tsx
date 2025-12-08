@@ -235,10 +235,10 @@ export default function EmployeeAttendancePage() {
             </div>
           </CardContent>
         </Card>
-
+                  
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {hasPermission(user?.roles || null, PERMISSIONS.REQUEST_WFH) && (
+          {hasPermission(user?.role || null, PERMISSIONS.REQUEST_WFH) && (
             <motion.button
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
