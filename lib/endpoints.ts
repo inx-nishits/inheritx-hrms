@@ -7,12 +7,18 @@ export const apiEndPoints = {
     resetPassword: "/reset-password",
     changePassword: "/change-password",
   },
+  permissions: {
+    allPermissions: "/permissions/all",
+    permissionsList: "/permissions",
+  },
   profile: {
     getProfile: (id: string | number) => `/users/${id}`,
     updateProfile: (id: string | number) => `/users/${id}`,
   },
   employees: {
+    list: "/employees",
     getProfile: (id: string | number) => `/employees/${id}`,
+    createEmployee: "/employees",
   },
   dashboard: "/dashboard/stats",
   user: {
@@ -22,26 +28,11 @@ export const apiEndPoints = {
       return `/user-management/users/${userId}/status`;
     },
   },
-  post: {
-    getPostList: "/post-management/posts/flagged",
-    deletePost: "/post-management/posts",
-    resolvedPost: "/post-management/posts",
-  },
-  contactusQueries: {
-    getQueries: "/contact-us/queries",
-    updateQueryStatus: (queryId: string | number) => {
-      return `/contact-us/queries/${queryId}/status`;
-    },
-  },
   content: {
     getContentData: (contentType: string | number) => {
       return `/content-management/${contentType}`;
     },
     addContentData: "/content-management",
-  },
-  setting: {
-    getSettingList: "/settings/app-updates",
-    addNewVersion: "/settings/app-updates",
   },
   roles: {
     getRoles: "/roles",
@@ -50,5 +41,24 @@ export const apiEndPoints = {
     updateRole: (roleId: string | number) => `/roles/${roleId}`,
     deleteRole: (roleId: string | number) => `/roles/${roleId}`,
     updateRoleStatus: (roleId: string | number) => `/roles/${roleId}/status`,
+  },
+  contactusQueries: {
+    getQueries: "/contact-us/queries",
+    updateQueryStatus: (queryId: string | number) => `/contact-us/queries/${queryId}/status`,
+  },
+  post: {
+    getPostList: "/posts",
+    deletePost: "/posts",
+    resolvedPost: "/posts",
+  },
+  setting: {
+    getSettingList: "/settings",
+    addNewVersion: "/settings/versions",
+  },
+  departments: {
+    getDepartments: "/departments",
+  },
+  designations: {
+    getDesignations: "/designations",
   },
 };

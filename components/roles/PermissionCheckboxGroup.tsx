@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Loading } from '@/components/ui/Loading';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export interface Permission {
   key: string;
@@ -88,6 +91,53 @@ export function PermissionCheckboxGroup({
   onPermissionChange,
   error,
 }: PermissionCheckboxGroupProps) {
+  const [permissionModules, setPermissionModules] = useState<PermissionGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        setLoading(true);
+        setFetchError(null);
+        const response = await api.getAllPermissions();
+        const permissions = response.data || response;
+
+        // Group permissions by module
+        const groupedPermissions = permissions.reduce((acc: { [key: string]: Permission[] }, permission: any) => {
+          const module = permission.code.split('.')[0];
+          const action = permission.code.split('.')[1];
+
+          if (!acc[module]) {
+            acc[module] = [];
+          }
+
+          acc[module].push({
+            key: permission.id, // Use permission ID as key instead of code
+            label: action.charAt(0).toUpperCase() + action.slice(1),
+          });
+
+          return acc;
+        }, {});
+
+        // Convert to PermissionGroup format
+        const modules: PermissionGroup[] = Object.keys(groupedPermissions).map(module => ({
+          module: module.charAt(0).toUpperCase() + module.slice(1),
+          permissions: groupedPermissions[module],
+        }));
+
+        setPermissionModules(modules);
+      } catch (err) {
+        console.error('Failed to fetch permissions:', err);
+        setFetchError('Failed to load permissions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, []);
+
   const handleModuleToggle = (module: PermissionGroup, checked: boolean) => {
     module.permissions.forEach(permission => {
       if (checked) {
@@ -111,6 +161,22 @@ export function PermissionCheckboxGroup({
     return selectedCount > 0 && selectedCount < module.permissions.length;
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+        <p className="text-sm text-red-600 dark:text-red-400">{fetchError}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -127,7 +193,7 @@ export function PermissionCheckboxGroup({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {PERMISSION_MODULES.map((module) => {
+        {permissionModules.map((module) => {
           const isFullySelected = isModuleFullySelected(module);
           const isPartiallySelected = isModulePartiallySelected(module);
 
@@ -193,6 +259,3 @@ export function PermissionCheckboxGroup({
     </div>
   );
 }
-
-export { PERMISSION_MODULES };
-

@@ -235,10 +235,10 @@ export default function EmployeeAttendancePage() {
             </div>
           </CardContent>
         </Card>
-
+                  
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {hasPermission(user?.role || null, PERMISSIONS.REQUEST_WFH) && (
+          {user?.role && user.role.some((r) => hasPermission(r, PERMISSIONS.REQUEST_WFH)) && (
             <motion.button
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
@@ -257,7 +257,7 @@ export default function EmployeeAttendancePage() {
             </motion.button>
           )}
           
-          {hasPermission(user?.role || null, PERMISSIONS.REQUEST_PARTIAL_DAY) && (
+          {user?.role && user.role.some((r) => hasPermission(r, PERMISSIONS.REQUEST_PARTIAL_DAY)) && (
             <motion.button
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
@@ -276,7 +276,7 @@ export default function EmployeeAttendancePage() {
             </motion.button>
           )}
 
-          {hasPermission(user?.role || null, PERMISSIONS.REGULARIZE_ATTENDANCE) && (
+          {user?.role && user.role.some((r) => hasPermission(r, PERMISSIONS.REGULARIZE_ATTENDANCE)) && (
             <motion.button
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}

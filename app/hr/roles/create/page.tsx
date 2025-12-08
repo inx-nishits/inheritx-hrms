@@ -30,12 +30,9 @@ export default function CreateRolePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Get organization ID from user profile or context
-    // For now, we'll use a placeholder or fetch from profile
-    if (user) {
-      // You might need to fetch the user profile to get organizationId
-      // For now, we'll leave it empty and let the API handle it
-      setFormData(prev => ({ ...prev, organizationId: '' }));
+    // Get organization ID from user context (from login response)
+    if (user?.organizationId) {
+      setFormData(prev => ({ ...prev, organizationId: user.organizationId || '' }));
     }
   }, [user]);
 
@@ -61,21 +58,21 @@ export default function CreateRolePage() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.roleName.trim()) {
       newErrors.roleName = 'Role name is required';
     }
-    
+
     if (selectedPermissions.length === 0) {
       newErrors.permissions = 'At least one permission must be selected';
     }
-    
+
     return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -95,7 +92,7 @@ export default function CreateRolePage() {
 
       await api.createRole(roleData);
       success('Role created successfully');
-      
+
       // Navigate to roles list after a short delay
       setTimeout(() => {
         router.push('/hr/roles');
@@ -114,7 +111,7 @@ export default function CreateRolePage() {
     <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
       <div className="space-y-6 pb-10">
         <ToastContainer toasts={toasts} onClose={removeToast} />
-        
+
         {/* Header */}
         <div className="flex items-center gap-4">
           <Link href="/hr/roles">
@@ -149,21 +146,6 @@ export default function CreateRolePage() {
               </h2>
               <Card>
                 <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-foreground">
-                    Organization ID
-                  </label>
-                  <Input
-                    value={formData.organizationId}
-                    onChange={(e) => handleInputChange('organizationId', e.target.value)}
-                    placeholder="Auto-filled from your organization"
-                    disabled
-                    className="bg-muted/50"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This field is automatically set based on your organization
-                  </p>
-                </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
@@ -174,11 +156,7 @@ export default function CreateRolePage() {
                     onChange={(e) => handleInputChange('roleName', e.target.value)}
                     placeholder="e.g., HR Manager, Admin, etc."
                     error={errors.roleName}
-                    required
                   />
-                  {errors.roleName && (
-                    <p className="text-sm text-red-500 mt-1">{errors.roleName}</p>
-                  )}
                 </div>
 
                 <div>
@@ -232,4 +210,4 @@ export default function CreateRolePage() {
     </ProtectedRoute>
   );
 }
-
+ 

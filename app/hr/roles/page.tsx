@@ -25,13 +25,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface Permission {
+  id: string;
+  code: string;
+  description: string;
+}
+
 interface Role {
   id: string;
   organizationId: string;
   roleName: string;
   description: string;
-  status: 'active' | 'inactive';
-  permissionIds: string[];
+  permissions: Permission[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -110,17 +115,6 @@ export default function RolesPage() {
     }
   };
 
-  const handleToggleStatus = async (role: Role) => {
-    try {
-      const newStatus = role.status === 'active' ? 'inactive' : 'active';
-      await api.updateRoleStatus(role.id, newStatus);
-      success(`Role ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
-      fetchRoles();
-    } catch (err) {
-      console.error('Failed to update role status:', err);
-      showError('Failed to update role status. Please try again.');
-    }
-  };
 
   const filteredRoles = Array.isArray(roles) ? roles.filter(role =>
     role?.roleName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -205,7 +199,6 @@ export default function RolesPage() {
                             <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Role Name</th>
                             <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Description</th>
                             <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Total Permissions</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Status</th>
                             <th className="text-right py-3 px-4 text-sm font-semibold text-foreground">Actions</th>
                           </tr>
                         </thead>
@@ -222,16 +215,7 @@ export default function RolesPage() {
                               </td>
                               <td className="py-3 px-4">
                                 <Badge variant="secondary">
-                                  {role.permissionIds?.length || 0} permissions
-                                </Badge>
-                              </td>
-                              <td className="py-3 px-4">
-                                <Badge 
-                                  variant={role.status === 'active' ? 'default' : 'secondary'}
-                                  className="cursor-pointer"
-                                  onClick={() => handleToggleStatus(role)}
-                                >
-                                  {role.status === 'active' ? 'Active' : 'Inactive'}
+                                  {role.permissions?.length || 0} permissions
                                 </Badge>
                               </td>
                               <td className="py-3 px-4">
@@ -333,4 +317,3 @@ export default function RolesPage() {
     </ProtectedRoute>
   );
 }
-
