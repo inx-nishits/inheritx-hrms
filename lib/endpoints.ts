@@ -28,12 +28,6 @@ export const apiEndPoints = {
       return `/user-management/users/${userId}/status`;
     },
   },
-  content: {
-    getContentData: (contentType: string | number) => {
-      return `/content-management/${contentType}`;
-    },
-    addContentData: "/content-management",
-  },
   roles: {
     getRoles: "/roles",
     getRole: (roleId: string | number) => `/roles/${roleId}`,
@@ -45,15 +39,6 @@ export const apiEndPoints = {
   contactusQueries: {
     getQueries: "/contact-us/queries",
     updateQueryStatus: (queryId: string | number) => `/contact-us/queries/${queryId}/status`,
-  },
-  post: {
-    getPostList: "/posts",
-    deletePost: "/posts",
-    resolvedPost: "/posts",
-  },
-  setting: {
-    getSettingList: "/settings",
-    addNewVersion: "/settings/versions",
   },
   departments: {
     getDepartments: "/departments",

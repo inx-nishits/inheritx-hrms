@@ -198,61 +198,6 @@ export const api = {
       body: JSON.stringify({ status }),
     });
   },
-
-  // Post Management APIs
-  getPostList: async () => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.post.getPostList}`);
-  },
-
-  deletePost: async (postId: string | number) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.post.deletePost}/${postId}`, {
-      method: 'DELETE',
-    });
-  },
-
-  resolvePost: async (postId: string | number) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.post.resolvedPost}/${postId}/resolve`, {
-      method: 'PUT',
-    });
-  },
-
-  // Contact Us Queries APIs
-  getQueries: async () => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.contactusQueries.getQueries}`);
-  },
-
-  updateQueryStatus: async (queryId: string | number, status: string) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.contactusQueries.updateQueryStatus(queryId)}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  },
-
-  // Content Management APIs
-  getContentData: async (contentType: string | number) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.content.getContentData(contentType)}`);
-  },
-
-  addContentData: async (contentData: any) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.content.addContentData}`, {
-      method: 'POST',
-      body: JSON.stringify(contentData),
-    });
-  },
-
-  // Settings APIs
-  getSettingList: async () => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.setting.getSettingList}`);
-  },
-
-  addNewVersion: async (versionData: any) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.setting.addNewVersion}`, {
-      method: 'POST',
-      body: JSON.stringify(versionData),
-    });
-  },
-
-  // Role Management APIs
   // Role Management APIs
   getRoles: async (params?: any) => {
     const queryString = params ? new URLSearchParams(params).toString() : '';
