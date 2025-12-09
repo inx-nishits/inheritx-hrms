@@ -50,5 +50,6 @@ export const apiEndPoints = {
     checkIn: "/attendance/check-in",
     checkOut: "/attendance/check-out",
     getAttendance: (id: string | number) => `/attendance/status/${id}`,
+    getEmployeeAttendance: (id: string | number) => `/attendance/employee/${id}`,
   },
 };

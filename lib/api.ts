@@ -415,4 +415,22 @@ export const api = {
       : `${API_BASE_URL}${apiEndPoints.attendance.getAttendance(employeeId)}`;
     return authenticatedFetch(url);
   },
+
+  getEmployeeAttendance: async (
+    employeeId: string | number,
+    params?: { page?: number; limit?: number; filter?: string; tab?: 'logs' | 'requests' }
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.filter) searchParams.set('filter', params.filter);
+    if (params?.tab) searchParams.set('tab', params.tab);
+
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${API_BASE_URL}${apiEndPoints.attendance.getEmployeeAttendance(employeeId)}?${queryString}`
+      : `${API_BASE_URL}${apiEndPoints.attendance.getEmployeeAttendance(employeeId)}`;
+
+    return authenticatedFetch(url);
+  },
 };
