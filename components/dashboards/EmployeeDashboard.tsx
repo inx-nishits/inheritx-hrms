@@ -32,6 +32,7 @@ export default function EmployeeDashboard() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -123,11 +124,17 @@ export default function EmployeeDashboard() {
     }
   };
 
-  const handleAttendanceToggle = async () => {
-    console.log("user",user)
+  const handleAttendanceToggle = () => {
+    // Show confirmation modal instead of directly performing action
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmAttendance = async () => {
     if (!user?.employeeId) return;
-    console.log("isCheckedIn", isCheckedIn)
+    
+    setShowConfirmModal(false);
     setIsCheckingIn(true);
+    
     try {
       if (isCheckedIn) {
         await api.checkOut(user.employeeId);
@@ -708,6 +715,72 @@ export default function EmployeeDashboard() {
               })}
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Confirmation Modal for Clock-In/Clock-Out */}
+      <Modal 
+        isOpen={showConfirmModal} 
+        onClose={() => setShowConfirmModal(false)} 
+        title={isCheckedIn ? "Confirm Clock-Out" : "Confirm Clock-In"} 
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className={`p-3 rounded-full ${
+              isCheckedIn 
+                ? 'bg-amber-100 dark:bg-amber-900/30' 
+                : 'bg-primary/10'
+            }`}>
+              {isCheckedIn ? (
+                <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              ) : (
+                <Laptop className="h-6 w-6 text-primary" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground mb-2">
+                {isCheckedIn 
+                  ? "Are you sure you want to clock out?" 
+                  : "Are you sure you want to clock in?"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {isCheckedIn 
+                  ? "This will end your current work session. Make sure you have completed your work for the day."
+                  : "This will start your work session. Your attendance will be recorded from this moment."}
+              </p>
+              <div className="mt-3 p-3 bg-muted/50 rounded-[8px] border border-border/40">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Current Time:</span>
+                  <span className="font-semibold text-foreground tabular-nums">{formatTime(currentTime)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-1">
+                  <span className="text-muted-foreground">Date:</span>
+                  <span className="font-semibold text-foreground">{formatDate(currentTime)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button 
+              onClick={handleConfirmAttendance}
+              className="flex-1"
+              disabled={isCheckingIn}
+            >
+              {isCheckingIn 
+                ? (isCheckedIn ? 'Clocking Out...' : 'Clocking In...')
+                : (isCheckedIn ? 'Yes, Clock Out' : 'Yes, Clock In')
+              }
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfirmModal(false)}
+              className="flex-1"
+              disabled={isCheckingIn}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

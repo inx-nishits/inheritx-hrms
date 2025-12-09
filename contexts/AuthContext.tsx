@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * login: call api.login, normalize/map api roles, optionally check requiredRole,
    * store user + tokens and token expiry if provided (expiresIn seconds).
    */
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, requiredRole?: UserRole): Promise<boolean> => {
   try {
     const responseData = await api.login(email, password);
     const body = responseData.data ?? responseData;
@@ -210,6 +210,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   } catch (error) {
     console.error("Login failed:", error);
+    // Preserve error messages for better user feedback
+    if (error instanceof Error) {
+      throw error;
+    }
     return false;
   }
 };

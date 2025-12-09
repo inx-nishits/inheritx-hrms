@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { PageTitle } from '@/components/ui/PageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -24,7 +25,10 @@ import {
   Users,
   MoreVertical,
   Edit,
-  Coffee
+  Coffee,
+  Pencil,
+  ArrowUp,
+  X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -40,10 +44,11 @@ export default function EmployeeAttendancePage() {
   const [selectedFilter, setSelectedFilter] = useState('last30Days');
   const [activeTab, setActiveTab] = useState<'logs' | 'requests'>('logs');
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
-  const [dropdownPositions, setDropdownPositions] = useState<Record<number, { vertical: 'bottom' | 'top'; horizontal: 'left' | 'right'; top?: number; left?: number }>>({});
+  const [dropdownPositions, setDropdownPositions] = useState<Record<number, { vertical: 'bottom' | 'top'; horizontal: 'left' | 'right' }>>({});
   const [showWFHModal, setShowWFHModal] = useState(false);
   const [showPartialDayModal, setShowPartialDayModal] = useState(false);
   const [showRegularizeModal, setShowRegularizeModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   
   // Timings state
   const getCurrentDayName = () => {
@@ -149,10 +154,12 @@ export default function EmployeeAttendancePage() {
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">My Attendance</h1>
-            <p className="text-muted-foreground">View your attendance records, request changes, and track your hours</p>
-          </div>
+          <PageTitle 
+            size="xl" 
+            description="View your attendance records, request changes, and track your hours"
+          >
+            My Attendance
+          </PageTitle>
           <div className="flex gap-2">
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
@@ -474,78 +481,37 @@ export default function EmployeeAttendancePage() {
                             const button = e.currentTarget;
                             const rect = button.getBoundingClientRect();
                             const viewportHeight = window.innerHeight;
-                            const viewportWidth = window.innerWidth;
                             const spaceBelow = viewportHeight - rect.bottom;
                             const spaceAbove = rect.top;
-                            const spaceRight = viewportWidth - rect.right;
-                            const spaceLeft = rect.left;
-                            const dropdownHeight = 180;
-                            const dropdownWidth = 192;
+                            
+                            // Check if this is a Weekly-off log
+                            const isWeeklyOff = log.effectiveHours === 'Full day Weekly-off' || log.status === 'weekoff';
+                            
+                            // Updated dimensions for the dropdown - dynamic based on log type
+                            const dropdownHeight = isWeeklyOff ? 180 : 320; // Simplified for weekly-off, full for others
+                            const dropdownWidth = isWeeklyOff ? 200 : 260;
                             const padding = 8;
                             
                             let vertical: 'bottom' | 'top' = 'bottom';
-                            let topValue: number;
-                            let horizontal: 'left' | 'right' = 'right';
-                            let leftValue: number;
                             
-                            // VERTICAL POSITIONING - Fully dynamic flip
-                            // Check if we have enough space below (preferred direction)
+                            // VERTICAL POSITIONING - Check available space
                             if (spaceBelow >= dropdownHeight + padding) {
                               // Enough space below - open downward
                               vertical = 'bottom';
-                              topValue = rect.bottom + padding;
-                            } 
-                            // Check if we have enough space above (flip direction)
-                            else if (spaceAbove >= dropdownHeight + padding) {
+                            } else if (spaceAbove >= dropdownHeight + padding) {
                               // Not enough space below but enough above - flip upward
                               vertical = 'top';
-                              topValue = rect.top - dropdownHeight - padding;
-                            } 
-                            // Neither side has enough space - use the side with MORE space
-                            else {
-                              if (spaceBelow > spaceAbove) {
-                                // More space below - open downward
-                                vertical = 'bottom';
-                                topValue = rect.bottom + padding;
-                              } else {
-                                // More space above - flip upward
-                                vertical = 'top';
-                                topValue = rect.top - dropdownHeight - padding;
-                              }
+                            } else {
+                              // Use the side with more space
+                              vertical = spaceBelow > spaceAbove ? 'bottom' : 'top';
                             }
                             
-                            // HORIZONTAL POSITIONING - Fully dynamic flip
-                            // Check if we have enough space on the right (preferred direction - align right edge)
-                            if (spaceRight >= dropdownWidth + padding) {
-                              // Enough space on right - align to right edge of button
-                              horizontal = 'right';
-                              leftValue = rect.right - dropdownWidth;
-                            } 
-                            // Check if we have enough space on the left (flip direction - align left edge)
-                            else if (spaceLeft >= dropdownWidth + padding) {
-                              // Not enough space on right but enough on left - flip to left side
-                              horizontal = 'left';
-                              leftValue = rect.left;
-                            } 
-                            // Neither side has enough space - use the side with MORE space
-                            else {
-                              if (spaceRight > spaceLeft) {
-                                // More space on right - align right but constrain to viewport
-                                horizontal = 'right';
-                                leftValue = Math.max(padding, rect.right - dropdownWidth);
-                              } else {
-                                // More space on left - flip to left side but constrain to viewport
-                                horizontal = 'left';
-                                leftValue = Math.min(rect.left, viewportWidth - dropdownWidth - padding);
-                              }
-                            }
-                            
-                            // Store only direction preferences for relative positioning
+                            // Store position values for absolute positioning (relative to button)
                             setDropdownPositions(prev => ({ 
                               ...prev, 
                               [idx]: { 
                                 vertical, 
-                                horizontal
+                                horizontal: 'right' as const
                               } 
                             }));
                             setOpenDropdownIndex(openDropdownIndex === idx ? null : idx);
@@ -568,59 +534,135 @@ export default function EmployeeAttendancePage() {
                             <div 
                               data-dropdown-index={idx}
                               className={cn(
-                                "absolute z-[100] bg-background border border-border rounded-[8px] shadow-lg py-1 mt-2",
-                                dropdownPositions[idx]?.vertical === 'top' ? 'bottom-full mb-2' : 'top-full',
-                                dropdownPositions[idx]?.horizontal === 'right' ? 'right-0 mr-4' : 'left-0 ml-4',
-                                "max-w-[min(250px,calc(100vw-32px))]"
+                                "absolute z-[100] bg-background border border-border rounded-[8px] shadow-lg",
+                                dropdownPositions[idx]?.vertical === 'top' ? 'bottom-full mb-2' : 'top-full mt-2',
+                                dropdownPositions[idx]?.horizontal === 'right' ? 'right-0' : 'left-0'
                               )}
                               onClick={(e) => e.stopPropagation()}
                               style={{
-                                maxHeight: '180px',
+                                width: (log.effectiveHours === 'Full day Weekly-off' || log.status === 'weekoff') ? '200px' : '260px',
+                                maxWidth: 'calc(100vw - 32px)',
+                                maxHeight: (log.effectiveHours === 'Full day Weekly-off' || log.status === 'weekoff') ? '180px' : '320px',
                                 overflowY: 'auto',
-                                minWidth: '192px',
-                                width: 'max-content',
                               }}
                             >
-                            <button
-                              onClick={() => {
-                                setShowRegularizeModal(true);
-                                setOpenDropdownIndex(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-xs font-medium text-foreground hover:bg-accent flex items-center gap-2 transition-colors"
-                            >
-                              <Edit className="h-3.5 w-3.5 flex-shrink-0" />
-                              Regularize
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowWFHModal(true);
-                                setOpenDropdownIndex(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-xs font-medium text-foreground hover:bg-accent flex items-center gap-2 transition-colors"
-                            >
-                              <Home className="h-3.5 w-3.5 flex-shrink-0" />
-                              Apply WFH Request
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowPartialDayModal(true);
-                                setOpenDropdownIndex(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-xs font-medium text-foreground hover:bg-accent flex items-center gap-2 transition-colors"
-                            >
-                              <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                              Apply Partial Day
-                            </button>
-                            <button
-                              onClick={() => {
-                                window.location.href = '/employees/leave';
-                                setOpenDropdownIndex(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-xs font-medium text-foreground hover:bg-accent flex items-center gap-2 transition-colors"
-                            >
-                              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                              Request Leave
-                            </button>
+                              {/* Conditional rendering: Simplified for Weekly-off, Full for others */}
+                              {(log.effectiveHours === 'Full day Weekly-off' || log.status === 'weekoff') ? (
+                                /* Action Buttons - Static Content for Weekly-off */
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => {
+                                      setShowRegularizeModal(true);
+                                      setOpenDropdownIndex(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-accent rounded-md transition-colors"
+                                  >
+                                    Regularize
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setShowWFHModal(true);
+                                      setOpenDropdownIndex(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-accent rounded-md transition-colors"
+                                  >
+                                    Apply WFH Request
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setShowPartialDayModal(true);
+                                      setOpenDropdownIndex(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-accent rounded-md transition-colors"
+                                  >
+                                    Apply Partial Day
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setShowLeaveModal(true);
+                                      setOpenDropdownIndex(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-accent rounded-md transition-colors"
+                                  >
+                                    Request Leave
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Shift Information */}
+                                  <div className="px-3 pt-2.5 pb-1.5 border-b border-border">
+                                    <h3 className="text-sm font-semibold text-foreground">Flexible shift (09 Dec)</h3>
+                                    <p className="text-xs text-muted-foreground mt-0.5">9:28 AM - 5:28 PM</p>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="px-1 py-0.5 border-b border-border">
+                                    <button
+                                      onClick={() => {
+                                        setShowRegularizeModal(true);
+                                        setOpenDropdownIndex(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 text-left text-xs font-medium text-foreground hover:bg-accent rounded-md flex items-center gap-2 transition-colors"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                      Regularize
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setShowPartialDayModal(true);
+                                        setOpenDropdownIndex(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 text-left text-xs font-medium text-foreground hover:bg-accent rounded-md flex items-center gap-2 transition-colors"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                      Apply Partial Day
+                                    </button>
+                                  </div>
+
+                                  {/* Main Door Section */}
+                                  <div className="px-3 py-2.5 space-y-2">
+                                    <h4 className="text-xs font-semibold text-foreground">Main door</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      {/* Clock-in Column */}
+                                      <div className="space-y-2">
+                                        {[
+                                          { time: '9:28:35 AM', type: 'in' },
+                                          { time: '12:39:31 PM', type: 'in' },
+                                          { time: '1:55:02 PM', type: 'in' }
+                                        ].map((entry, entryIdx) => (
+                                          <div key={entryIdx} className="flex items-center gap-2 text-xs text-foreground">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                            <span className="tabular-nums text-xs">{entry.time}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Clock-out Column */}
+                                      <div className="space-y-2">
+                                        {[
+                                          { time: '12:38:59 PM', type: 'out' },
+                                          { time: '1:19:36 PM', type: 'out' },
+                                          { time: 'MISSING', type: 'out', missing: true }
+                                        ].map((entry, entryIdx) => (
+                                          <div key={entryIdx} className="flex items-center gap-2 text-xs text-foreground">
+                                            {entry.missing ? (
+                                              <>
+                                                <ArrowUp className="h-3.5 w-3.5 text-red-500 shrink-0" style={{ transform: 'rotate(45deg)' }} />
+                                                <span className="text-xs text-muted-foreground font-medium">{entry.time}</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ArrowUp className="h-3.5 w-3.5 text-orange-500 shrink-0" style={{ transform: 'rotate(45deg)' }} />
+                                                <span className="tabular-nums text-xs">{entry.time}</span>
+                                              </>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                           </div>
                           </>
                         )}
@@ -742,6 +784,46 @@ export default function EmployeeAttendancePage() {
             <div className="flex gap-2 pt-4">
               <Button type="submit" className="flex-1">Submit Request</Button>
               <Button type="button" variant="outline" onClick={() => setShowRegularizeModal(false)} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        <Modal isOpen={showLeaveModal} onClose={() => setShowLeaveModal(false)} title="Request Leave" size="md">
+          <form className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Leave Type <span className="text-red-500">*</span></label>
+              <NextUISelect
+                placeholder="Select leave type"
+                options={[
+                  { value: 'casual', label: 'Casual Leave' },
+                  { value: 'sick', label: 'Sick Leave' },
+                  { value: 'annual', label: 'Annual Leave' },
+                  { value: 'emergency', label: 'Emergency Leave' },
+                  { value: 'unpaid', label: 'Unpaid Leave' }
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Start Date <span className="text-red-500">*</span></label>
+              <Input type="date" required />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">End Date <span className="text-red-500">*</span></label>
+              <Input type="date" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Reason</label>
+              <textarea
+                className="w-full min-h-[100px] px-3 py-2 border border-input rounded-md bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Enter reason for leave request..."
+                required
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex-1">Submit Request</Button>
+              <Button type="button" variant="outline" onClick={() => setShowLeaveModal(false)} className="flex-1">
                 Cancel
               </Button>
             </div>

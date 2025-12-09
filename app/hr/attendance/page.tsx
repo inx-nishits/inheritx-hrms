@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { PageTitle } from '@/components/ui/PageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -68,10 +69,12 @@ export default function HRAttendancePage() {
       <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Attendance Management</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Monitor and manage employee attendance</p>
-        </div>
+        <PageTitle 
+          size="lg" 
+          description="Monitor and manage employee attendance"
+        >
+          Attendance Management
+        </PageTitle>
         <div className="flex gap-2">
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
+import { PageTitle } from '@/components/ui/PageTitle';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -178,10 +179,12 @@ export default function HREmployeesPage() {
       <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Employee Management</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Manage and view all employees</p>
-        </div>
+        <PageTitle 
+          size="lg" 
+          description="Manage and view all employees"
+        >
+          Employee Management
+        </PageTitle>
         <Link href="/hr/employees/add">
           <Button>
             <UserPlus className="h-4 w-4 mr-2" />

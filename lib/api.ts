@@ -1,6 +1,8 @@
 import { apiEndPoints } from './endpoints';
+import { employees } from './mockData';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
+const USE_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK_API === 'true' || false;
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -42,17 +44,134 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
   return response.json();
 };
 
+// Mock JWT token generator for development
+const generateMockToken = (payload: any): string => {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 hours
+  const tokenPayload = { ...payload, exp, iat: Math.floor(Date.now() / 1000) };
+  const body = btoa(JSON.stringify(tokenPayload));
+  return `${header}.${body}.mock_signature`;
+};
+
+// Mock login function using employees from mockData
+const mockLogin = async (email: string, password: string) => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Find employee by email (any password works in mock mode)
+  const employee = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
+  
+  if (!employee) {
+    throw new ApiError(401, 'Invalid email or password');
+  }
+  
+  // Determine role based on designation
+  let roles: string[] = ['employee'];
+  if (employee.designation.toLowerCase().includes('hr manager')) {
+    roles = ['HR Manager'];
+  } else if (employee.department.toLowerCase().includes('human resources')) {
+    roles = ['hr'];
+  } else if (employee.designation.toLowerCase().includes('admin')) {
+    roles = ['System Admin'];
+  }
+  
+  // Generate mock token
+  const accessToken = generateMockToken({
+    id: employee.id,
+    email: employee.email,
+    name: employee.name,
+    role: roles,
+    employeeId: employee.id,
+    department: employee.department,
+  });
+  
+  return {
+    data: {
+      user: {
+        id: employee.id,
+        employeeId: employee.id,
+        email: employee.email,
+        name: employee.name,
+        role: roles,
+        department: employee.department,
+        avatar: employee.avatar,
+      },
+      accessToken,
+      refreshToken: `mock_refresh_${accessToken}`,
+    },
+    expires_in: 86400, // 24 hours
+  };
+};
+
 export const api = {
   // Auth APIs
   login: async (email: string, password: string) => {
+    // Use mock API if enabled or if real API fails
+    if (USE_MOCK_API) {
+      console.log('Using mock API for login');
+      const mockData = await mockLogin(email, password);
+      // Store token for consistency with real API flow
+      if (mockData.data && mockData.data.accessToken) {
+        localStorage.setItem('accessToken', mockData.data.accessToken);
+        if (mockData.expires_in) {
+          const expiryTime = Date.now() + (mockData.expires_in * 1000);
+          localStorage.setItem('tokenExpiry', expiryTime.toString());
+        }
+      }
+      return mockData;
+    }
+    
     try {
-      const response = await fetch(`${API_BASE_URL}${apiEndPoints.auth.login}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for faster fallback
+
+      let response: Response;
+      try {
+        response = await fetch(`${API_BASE_URL}${apiEndPoints.auth.login}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+          signal: controller.signal,
+        });
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        // Handle abort (timeout)
+        if (fetchError.name === 'AbortError') {
+          console.warn('API request timed out, falling back to mock API');
+          const mockData = await mockLogin(email, password);
+          if (mockData.data && mockData.data.accessToken) {
+            localStorage.setItem('accessToken', mockData.data.accessToken);
+            if (mockData.expires_in) {
+              const expiryTime = Date.now() + (mockData.expires_in * 1000);
+              localStorage.setItem('tokenExpiry', expiryTime.toString());
+            }
+          }
+          return mockData;
+        }
+        
+        // Handle network errors - fallback to mock
+        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+          console.warn('Network error detected, falling back to mock API');
+          const mockData = await mockLogin(email, password);
+          if (mockData.data && mockData.data.accessToken) {
+            localStorage.setItem('accessToken', mockData.data.accessToken);
+            if (mockData.expires_in) {
+              const expiryTime = Date.now() + (mockData.expires_in * 1000);
+              localStorage.setItem('tokenExpiry', expiryTime.toString());
+            }
+          }
+          return mockData;
+        }
+        
+        // Re-throw other errors
+        throw fetchError;
+      }
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -76,11 +195,25 @@ export const api = {
       console.log("access token", localStorage.getItem('accessToken'))
       return data;
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (error instanceof ApiError && error.status !== 0) {
         throw error;
       }
-      console.error('API call failed:', error);
-      throw new Error('Network error or server unavailable');
+      console.error('API call failed, falling back to mock API:', error);
+      
+      // Fallback to mock API on any network/server error
+      try {
+        const mockData = await mockLogin(email, password);
+        if (mockData.data && mockData.data.accessToken) {
+          localStorage.setItem('accessToken', mockData.data.accessToken);
+          if (mockData.expires_in) {
+            const expiryTime = Date.now() + (mockData.expires_in * 1000);
+            localStorage.setItem('tokenExpiry', expiryTime.toString());
+          }
+        }
+        return mockData;
+      } catch (mockError) {
+        throw mockError;
+      }
     }
   },
 

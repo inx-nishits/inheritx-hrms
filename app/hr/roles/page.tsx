@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
+import { PageTitle } from '@/components/ui/PageTitle';
+import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -142,12 +144,12 @@ export default function RolesPage() {
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Roles Management</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Manage roles and their permissions
-            </p>
-          </div>
+          <PageTitle 
+            size="lg" 
+            description="Manage roles and their permissions"
+          >
+            Roles Management
+          </PageTitle>
           <Link href="/hr/roles/create">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -180,7 +182,7 @@ export default function RolesPage() {
 
             {/* Roles Table */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">All Roles ({filteredRoles.length})</h2>
+              <SectionTitle size="md">All Roles ({filteredRoles.length})</SectionTitle>
               <Card>
                 <CardContent>
                 {paginatedRoles.length === 0 ? (

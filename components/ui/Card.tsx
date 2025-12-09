@@ -26,7 +26,7 @@ export function Card({ children, className, hover = false, as = 'div', ...props 
 
 export function CardHeader({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex flex-col space-y-1.5 p-3', className)} {...props}>
+    <div className={cn('flex flex-col space-y-1.5 px-4 pt-4 pb-3', className)} {...props}>
       {children}
     </div>
   );
