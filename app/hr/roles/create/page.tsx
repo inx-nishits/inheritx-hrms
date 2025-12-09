@@ -58,21 +58,21 @@ export default function CreateRolePage() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.roleName.trim()) {
       newErrors.roleName = 'Role name is required';
     }
-    
+
     if (selectedPermissions.length === 0) {
       newErrors.permissions = 'At least one permission must be selected';
     }
-    
+
     return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -92,7 +92,7 @@ export default function CreateRolePage() {
 
       await api.createRole(roleData);
       success('Role created successfully');
-      
+
       // Navigate to roles list after a short delay
       setTimeout(() => {
         router.push('/hr/roles');
@@ -111,7 +111,7 @@ export default function CreateRolePage() {
     <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
       <div className="space-y-6 pb-10">
         <ToastContainer toasts={toasts} onClose={removeToast} />
-        
+
         {/* Header */}
         <div className="flex items-center gap-4">
           <Link href="/hr/roles">
@@ -210,3 +210,4 @@ export default function CreateRolePage() {
     </ProtectedRoute>
   );
 }
+

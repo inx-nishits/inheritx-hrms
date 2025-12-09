@@ -126,6 +126,44 @@ export const api = {
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.dashboard}`);
   },
 
+  // Employee Management APIs
+  getEmployees: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    department?: string;
+    departmentId?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.department && params.department !== 'all') {
+      searchParams.set('department', params.department);
+    }
+    if (params?.departmentId && params.departmentId !== 'all') {
+      searchParams.set('departmentId', params.departmentId);
+    }
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder);
+
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${API_BASE_URL}${apiEndPoints.employees.list}?${queryString}`
+      : `${API_BASE_URL}${apiEndPoints.employees.list}`;
+
+    return authenticatedFetch(url);
+  },
+
+  createEmployee: async (employeeData: any) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.employees.createEmployee}`, {
+      method: 'POST',
+      body: JSON.stringify(employeeData),
+    });
+  },
+
   // User Management APIs
   getUserList: async (params?: any) => {
     const queryString = params ? new URLSearchParams(params).toString() : '';
@@ -161,6 +199,60 @@ export const api = {
     });
   },
 
+  // Post Management APIs
+  getPostList: async () => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.post.getPostList}`);
+  },
+
+  deletePost: async (postId: string | number) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.post.deletePost}/${postId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  resolvePost: async (postId: string | number) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.post.resolvedPost}/${postId}/resolve`, {
+      method: 'PUT',
+    });
+  },
+
+  // Contact Us Queries APIs
+  getQueries: async () => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.contactusQueries.getQueries}`);
+  },
+
+  updateQueryStatus: async (queryId: string | number, status: string) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.contactusQueries.updateQueryStatus(queryId)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // Content Management APIs
+  getContentData: async (contentType: string | number) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.content.getContentData(contentType)}`);
+  },
+
+  addContentData: async (contentData: any) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.content.addContentData}`, {
+      method: 'POST',
+      body: JSON.stringify(contentData),
+    });
+  },
+
+  // Settings APIs
+  getSettingList: async () => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.setting.getSettingList}`);
+  },
+
+  addNewVersion: async (versionData: any) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.setting.addNewVersion}`, {
+      method: 'POST',
+      body: JSON.stringify(versionData),
+    });
+  },
+
+  // Role Management APIs
   // Role Management APIs
   getRoles: async (params?: any) => {
     const queryString = params ? new URLSearchParams(params).toString() : '';
@@ -180,7 +272,6 @@ export const api = {
   },
 
   updateRole: async (roleId: string | number, roleData: any) => {
-    console.log("roleData", roleData, "roleId", roleId)
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.roles.updateRole(roleId)}`, {
       method: 'PATCH',
       body: JSON.stringify(roleData),
@@ -203,6 +294,26 @@ export const api = {
   // Permissions APIs
   getAllPermissions: async () => {
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.permissions.allPermissions}`);
+  },
+
+  // Departments APIs
+  getDepartments: async (params?: { page?: number; limit?: number }) => {
+    const queryString = params ? new URLSearchParams({
+      page: String(params.page || 1),
+      limit: String(params.limit || 10),
+    }).toString() : '';
+    const url = queryString ? `${API_BASE_URL}${apiEndPoints.departments.getDepartments}?${queryString}` : `${API_BASE_URL}${apiEndPoints.departments.getDepartments}`;
+    return authenticatedFetch(url);
+  },
+
+  // Designations APIs
+  getDesignations: async (params?: { page?: number; limit?: number }) => {
+    const queryString = params ? new URLSearchParams({
+      page: String(params.page || 1),
+      limit: String(params.limit || 100),
+    }).toString() : '';
+    const url = queryString ? `${API_BASE_URL}${apiEndPoints.designations.getDesignations}?${queryString}` : `${API_BASE_URL}${apiEndPoints.designations.getDesignations}`;
+    return authenticatedFetch(url);
   },
 
   // Attendance APIs

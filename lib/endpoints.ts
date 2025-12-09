@@ -16,7 +16,9 @@ export const apiEndPoints = {
     updateProfile: (id: string | number) => `/users/${id}`,
   },
   employees: {
+    list: "/employees",
     getProfile: (id: string | number) => `/employees/${id}`,
+    createEmployee: "/employees",
   },
   dashboard: "/dashboard/stats",
   user: {
@@ -39,6 +41,25 @@ export const apiEndPoints = {
     updateRole: (roleId: string | number) => `/roles/${roleId}`,
     deleteRole: (roleId: string | number) => `/roles/${roleId}`,
     updateRoleStatus: (roleId: string | number) => `/roles/${roleId}/status`,
+  },
+  contactusQueries: {
+    getQueries: "/contact-us/queries",
+    updateQueryStatus: (queryId: string | number) => `/contact-us/queries/${queryId}/status`,
+  },
+  post: {
+    getPostList: "/posts",
+    deletePost: "/posts",
+    resolvedPost: "/posts",
+  },
+  setting: {
+    getSettingList: "/settings",
+    addNewVersion: "/settings/versions",
+  },
+  departments: {
+    getDepartments: "/departments",
+  },
+  designations: {
+    getDesignations: "/designations",
   },
   attendance: {
     checkIn: "/attendance/check-in",

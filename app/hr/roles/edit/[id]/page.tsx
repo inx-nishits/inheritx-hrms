@@ -186,6 +186,19 @@ export default function EditRolePage() {
                 <CardContent className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
+                    Organization ID
+                  </label>
+                  <Input
+                    value={formData.organizationId}
+                    onChange={(e) => handleInputChange('organizationId', e.target.value)}
+                    placeholder="Organization ID"
+                    disabled
+                    className="bg-muted/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-foreground">
                     Role Name <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -193,7 +206,11 @@ export default function EditRolePage() {
                     onChange={(e) => handleInputChange('roleName', e.target.value)}
                     placeholder="e.g., HR Manager, Admin, etc."
                     error={errors.roleName}
+                    required
                   />
+                  {errors.roleName && (
+                    <p className="text-sm text-red-500 mt-1">{errors.roleName}</p>
+                  )}
                 </div>
 
                 <div>
