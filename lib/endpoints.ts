@@ -40,4 +40,9 @@ export const apiEndPoints = {
     deleteRole: (roleId: string | number) => `/roles/${roleId}`,
     updateRoleStatus: (roleId: string | number) => `/roles/${roleId}/status`,
   },
+  attendance: {
+    checkIn: "/attendance/check-in",
+    checkOut: "/attendance/check-out",
+    getAttendance: (id: string | number) => `/attendance/status/${id}`,
+  },
 };

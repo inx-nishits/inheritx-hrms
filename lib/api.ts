@@ -204,4 +204,26 @@ export const api = {
   getAllPermissions: async () => {
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.permissions.allPermissions}`);
   },
+
+  // Attendance APIs
+  checkIn: async (employeeId: string) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.attendance.checkIn}`, {
+      method: 'POST',
+      body: JSON.stringify({ employeeId }),
+    });
+  },
+
+  checkOut: async (employeeId: string) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.attendance.checkOut}`, {
+      method: 'POST',
+      body: JSON.stringify({ employeeId }),
+    });
+  },
+
+  getAttendance: async (employeeId: string | number, date?: string) => {
+    const url = date
+      ? `${API_BASE_URL}${apiEndPoints.attendance.getAttendance(employeeId)}?date=${date}`
+      : `${API_BASE_URL}${apiEndPoints.attendance.getAttendance(employeeId)}`;
+    return authenticatedFetch(url);
+  },
 };

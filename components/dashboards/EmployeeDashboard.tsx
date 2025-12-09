@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { holidays, employeesOnLeaveToday, employeesWorkingRemotely } from '@/lib/mockData';
@@ -28,6 +29,9 @@ export default function EmployeeDashboard() {
   const [showStatsInfo, setShowStatsInfo] = useState(false);
   const [showAllHolidays, setShowAllHolidays] = useState(false);
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,6 +39,32 @@ export default function EmployeeDashboard() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const loadAttendanceStatus = async () => {
+      if (!user?.employeeId) return;
+
+      try {
+        // Format today's date as YYYY-MM-DD
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0]; // Gets YYYY-MM-DD format
+
+        const attendanceData = await api.getAttendance(user.employeeId, formattedDate);
+        console.log("attendanceData", attendanceData)
+        // Check if user is currently checked in based on API response
+        const isCurrentlyCheckedIn = attendanceData?.data?.checkedIn || false;
+        console.log("isCurrentlyCheckedIn", isCurrentlyCheckedIn)
+        setIsCheckedIn(isCurrentlyCheckedIn);
+      } catch (error) {
+        console.error('Failed to load attendance status:', error);
+        setIsCheckedIn(false); // Default to not checked in on error
+      } finally {
+        setIsLoadingStatus(false);
+      }
+    };
+
+    loadAttendanceStatus();
+  }, [user?.employeeId]);
 
 
   const formatTime = (date: Date) => {
@@ -90,6 +120,28 @@ export default function EmployeeDashboard() {
       setSelectedRange('custom');
     } else {
       setSelectedRange(value === 'lastWeek' ? 'lastWeek' : 'lastMonth');
+    }
+  };
+
+  const handleAttendanceToggle = async () => {
+    console.log("user",user)
+    if (!user?.employeeId) return;
+    console.log("isCheckedIn", isCheckedIn)
+    setIsCheckingIn(true);
+    try {
+      if (isCheckedIn) {
+        await api.checkOut(user.employeeId);
+        setIsCheckedIn(false);
+      } else {
+        await api.checkIn(user.employeeId);
+        setIsCheckedIn(true);
+      }
+      // You might want to show a success toast here
+    } catch (error) {
+      console.error('Attendance action failed:', error);
+      // You might want to show an error toast here
+    } finally {
+      setIsCheckingIn(false);
     }
   };
 
@@ -222,16 +274,38 @@ export default function EmployeeDashboard() {
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="group relative w-full p-3 bg-gradient-to-br from-primary via-primary to-primary/90 text-white rounded-[8px] transition-all duration-200 shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30 overflow-hidden"
+                onClick={handleAttendanceToggle}
+                disabled={isCheckingIn}
+                className={`group relative w-full p-3 rounded-[8px] transition-all duration-200 shadow-sm overflow-hidden ${
+                  isCheckedIn
+                    ? 'bg-gradient-to-br from-green-500 via-green-600 to-green-600 text-white shadow-green-500/20'
+                    : 'bg-gradient-to-br from-primary via-primary to-primary/90 text-white shadow-primary/20 hover:shadow-md hover:shadow-primary/30'
+                }`}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className={`absolute inset-0 transition-opacity ${
+                  isCheckedIn
+                    ? 'bg-gradient-to-br from-white/0 via-white/0 to-white/10 opacity-0'
+                    : 'bg-gradient-to-br from-white/0 via-white/0 to-white/10 opacity-0 group-hover:opacity-100'
+                }`}></div>
                 <div className="relative flex items-center gap-2.5">
-                  <div className="p-1.5 bg-foreground/10 rounded-[8px] group-hover:bg-foreground/20 transition-colors">
-                    <Laptop className="h-4 w-4" />
+                  <div className={`p-1.5 rounded-[8px] transition-colors ${
+                    isCheckedIn
+                      ? 'bg-foreground/10'
+                      : 'bg-foreground/10 group-hover:bg-foreground/20'
+                  }`}>
+                    {isCheckedIn ? (
+                      <CheckCircle2 className="h-4 w-4 text-white" />
+                    ) : (
+                      <Laptop className="h-4 w-4" />
+                    )}
                   </div>
                   <div className="text-left flex-1">
-                    <div className="text-sm font-semibold">Remote Clock-In</div>
-                    <div className="text-xs text-white/80">Start session</div>
+                    <div className="text-sm font-semibold">
+                      {isCheckingIn ? (isCheckedIn ? 'Clocking Out...' : 'Clocking In...') : isCheckedIn ? 'Remote Clock-Out' : 'Remote Clock-In'}
+                    </div>
+                    <div className="text-xs text-white/80">
+                      {isCheckingIn ? 'Please wait...' : isCheckedIn ? 'End session' : 'Start session'}
+                    </div>
                   </div>
                 </div>
               </motion.button>
