@@ -268,6 +268,13 @@ export default function EmployeeAttendancePage() {
         type: 'out',
         location: item?.checkOutLocation ?? item?.location ?? undefined,
       });
+    } else if (item?.checkIn) {
+      // No out swipe present for this record – mark as missing
+      derivedEntries.push({
+        time: 'MISSING',
+        type: 'missing',
+        location: item?.checkOutLocation ?? item?.location ?? undefined,
+      });
     }
 
     const start = item?.shiftStart ?? item?.startTime ?? item?.shift_start;
@@ -833,18 +840,18 @@ export default function EmployeeAttendancePage() {
                                   statusMessage = 'Present | Missing Swipe(s)';
                                   iconElement = (
                                     <div className="relative">
-                                      <div className="w-4 h-4 rounded-full border-2 border-amber-500 flex items-center justify-center">
-                                        <AlertCircle className="h-2.5 w-2.5 text-amber-500 fill-amber-500" />
-                                      </div>
+                                    <div className="w-4 h-4 rounded-full border-2 border-amber-400 flex items-center justify-center text-amber-400">
+                                      <AlertCircle className="h-2.5 w-2.5" />
+                                    </div>
                                     </div>
                                   );
                                 } else {
                                   statusMessage = 'On Time';
                                   iconElement = (
                                     <div className="relative">
-                                      <div className="w-4 h-4 rounded-full border border-green-500 flex items-center justify-center">
-                                        <CheckCircle2 className="h-2.5 w-2.5 text-green-500 fill-green-500" />
-                                      </div>
+                                    <div className="w-4 h-4 rounded-full border border-green-500 flex items-center justify-center text-green-500">
+                                      <CheckCircle2 className="h-2.5 w-2.5" />
+                                    </div>
                                     </div>
                                   );
                                 }
@@ -852,18 +859,18 @@ export default function EmployeeAttendancePage() {
                                 statusMessage = 'On Time';
                                 iconElement = (
                                   <div className="relative">
-                                    <div className="w-4 h-4 rounded-full border border-green-500 flex items-center justify-center">
-                                      <CheckCircle2 className="h-2.5 w-2.5 text-green-500 fill-green-500" />
-                                    </div>
+                                  <div className="w-4 h-4 rounded-full border border-green-500 flex items-center justify-center text-green-500">
+                                    <CheckCircle2 className="h-2.5 w-2.5" />
+                                  </div>
                                   </div>
                                 );
                               } else if (log.log === 'warning') {
                                 statusMessage = 'Present | Missing Swipe(s)';
                                 iconElement = (
                                   <div className="relative">
-                                    <div className="w-4 h-4 rounded-full border-2 border-amber-500 flex items-center justify-center">
-                                      <AlertCircle className="h-2.5 w-2.5 text-amber-500 fill-amber-500" />
-                                    </div>
+                                  <div className="w-4 h-4 rounded-full border-2 border-amber-400 flex items-center justify-center text-amber-400">
+                                    <AlertCircle className="h-2.5 w-2.5" />
+                                  </div>
                                   </div>
                                 );
                               } else {
