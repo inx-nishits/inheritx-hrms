@@ -231,10 +231,10 @@ export const api = {
     });
   },
 
-  changePassword: async (currentPassword: string, newPassword: string) => {
+  changePassword: async (oldPassword: string, newPassword: string) => {
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.auth.changePassword}`, {
       method: 'POST',
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({ oldPassword, newPassword }),
     });
   },
 

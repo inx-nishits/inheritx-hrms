@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Tooltip, InfoTooltip } from '@/components/ui/Tooltip';
 import { Loading } from '@/components/ui/Loading';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { ChangePasswordModal } from '@/components/ui/ChangePasswordModal';
 import {
   User,
   Mail,
@@ -123,6 +124,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<EmployeeProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   useEffect(() => {
     console.log('Employee profile page useEffect triggered');
@@ -469,7 +471,36 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Security Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary flex-shrink-0" />
+              Security
+            </CardTitle>
+            <CardDescription>
+              Manage your account security and password
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Update your password regularly to keep your account secure.
+              </p>
+            </div>
+            <Button onClick={() => setShowChangePassword(true)} className="w-full md:w-auto">
+              <Lock className="h-4 w-4 mr-2" />
+              Change Password
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </ProtectedRoute>
   );
 }

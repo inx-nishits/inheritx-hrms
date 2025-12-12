@@ -6,7 +6,7 @@ import { Input } from './Input';
 import { Button } from './Button';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -14,13 +14,10 @@ interface ChangePasswordModalProps {
 }
 
 export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
-  const { user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -38,12 +35,6 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
       newErrors.newPassword = 'Password must be at least 8 characters long';
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
       newErrors.newPassword = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
-    }
-
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your new password';
-    } else if (newPassword !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     if (currentPassword && newPassword && currentPassword === newPassword) {
@@ -65,32 +56,19 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     setErrors({});
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // In a real app, you would call an API here
-      // const response = await fetch('/api/change-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     currentPassword,
-      //     newPassword,
-      //   }),
-      // });
-
-      // For demo purposes, we'll just show success
+      await api.changePassword(currentPassword, newPassword);
       setSuccess(true);
       
       // Reset form after success
       setTimeout(() => {
         setCurrentPassword('');
         setNewPassword('');
-        setConfirmPassword('');
         setSuccess(false);
         onClose();
       }, 2000);
     } catch (error) {
-      setErrors({ submit: 'Failed to change password. Please try again.' });
+      const message = error instanceof Error ? error.message : 'Failed to change password. Please try again.';
+      setErrors({ submit: message });
     } finally {
       setLoading(false);
     }
@@ -100,7 +78,6 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     if (!loading) {
       setCurrentPassword('');
       setNewPassword('');
-      setConfirmPassword('');
       setErrors({});
       setSuccess(false);
       onClose();
@@ -197,14 +174,6 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                     return newErrors;
                   });
                 }
-                // Clear confirm password error if passwords match
-                if (confirmPassword && e.target.value === confirmPassword && errors.confirmPassword) {
-                  setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.confirmPassword;
-                    return newErrors;
-                  });
-                }
               }}
               placeholder="Enter your new password"
               className="pl-10 pr-10"
@@ -228,45 +197,6 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
               Password must be at least 8 characters with uppercase, lowercase, and numbers
             </p>
           )}
-        </div>
-
-        {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-semibold mb-2">
-            Confirm New Password <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-            <Input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                if (errors.confirmPassword) {
-                  setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.confirmPassword;
-                    return newErrors;
-                  });
-                }
-              }}
-              placeholder="Confirm your new password"
-              className="pl-10 pr-10"
-              error={errors.confirmPassword}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
         </div>
 
         {/* Action Buttons */}

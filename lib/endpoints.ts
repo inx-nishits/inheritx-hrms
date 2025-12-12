@@ -3,9 +3,9 @@ import { employees } from "./mockData";
 export const apiEndPoints = {
   auth: {
     login: "/auth/login",
-    forgotPassword: "/forgot-password",
-    resetPassword: "/reset-password",
-    changePassword: "/change-password",
+    forgotPassword: "/auth/forgot-password",
+    resetPassword: "/auth/reset-password",
+    changePassword: "/auth/change-password",
   },
   permissions: {
     allPermissions: "/permissions/all",
