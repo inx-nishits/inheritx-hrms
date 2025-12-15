@@ -247,8 +247,8 @@ export const api = {
     return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.employees.getProfile(id)}`);
   },
 
-  updateProfile: async (profileData: any) => {
-    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.profile.updateProfile}`, {
+  updateProfile: async (userId: string | number, profileData: any) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.profile.updateProfile(userId)}`, {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { Tooltip, InfoTooltip } from '@/components/ui/Tooltip';
 import { Loading } from '@/components/ui/Loading';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -124,7 +125,15 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<EmployeeProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [editableValues, setEditableValues] = useState({
+    firstName: '',
+    lastName: '',
+    dob: '',
+  });
 
   useEffect(() => {
     console.log('Employee profile page useEffect triggered');
@@ -161,6 +170,16 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [isAuthenticated, router, user?.id]);
+
+  useEffect(() => {
+    if (profileData) {
+      setEditableValues({
+        firstName: profileData.firstName || '',
+        lastName: profileData.lastName || '',
+        dob: profileData.dob ? new Date(profileData.dob).toISOString().split('T')[0] : '',
+      });
+    }
+  }, [profileData]);
 
   if (!isAuthenticated || !user) {
     return null;
@@ -271,6 +290,44 @@ export default function ProfilePage() {
     });
   };
 
+  const handleEditableChange = (field: keyof typeof editableValues, value: string) => {
+    setEditableValues(prev => ({ ...prev, [field]: value }));
+    setSaveError(null);
+    setSaveSuccess(null);
+  };
+
+  const handleSave = async () => {
+    if (!profileData?.userId) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(null);
+
+    try {
+      const payload = {
+        firstName: editableValues.firstName.trim(),
+        lastName: editableValues.lastName.trim(),
+        dob: editableValues.dob,
+      };
+
+      await api.updateProfile(profileData.userId, payload);
+
+      setProfileData(prev => prev ? {
+        ...prev,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        dob: payload.dob,
+      } : prev);
+
+      setSaveSuccess('Profile updated successfully');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <ProtectedRoute allowedRoles={['employee']}>
       <div className="space-y-6 pb-10">
@@ -319,21 +376,37 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ReadOnlyField
-                label="First Name"
-                value={profileData.firstName || 'N/A'}
-                tooltip="Your legal first name"
-              />
-              <ReadOnlyField
-                label="Last Name"
-                value={profileData.lastName || 'N/A'}
-                tooltip="Your legal last name"
-              />
-              <ReadOnlyField
-                label="Email"
-                value={profileData.user?.email || 'N/A'}
-                tooltip="Your work email address"
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-foreground flex items-center gap-2">
+                  First Name
+                  <Badge variant="secondary" className="uppercase text-[10px]">Editable</Badge>
+                </label>
+                <Input
+                  value={editableValues.firstName}
+                  onChange={(e) => handleEditableChange('firstName', e.target.value)}
+                  placeholder="Enter your first name"
+                />
+                <p className="text-xs text-muted-foreground">Your legal first name</p>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-foreground flex items-center gap-2">
+                  Last Name
+                  <Badge variant="secondary" className="uppercase text-[10px]">Editable</Badge>
+                </label>
+                <Input
+                  value={editableValues.lastName}
+                  onChange={(e) => handleEditableChange('lastName', e.target.value)}
+                  placeholder="Enter your last name"
+                />
+                <p className="text-xs text-muted-foreground">Your legal last name</p>
+              </div>
+              <div className="space-y-2">
+                <ReadOnlyField
+                  label="Work Email"
+                  value={profileData.user?.email || 'N/A'}
+                  tooltip="Your official work email (not editable)"
+                />
+              </div>
               <ReadOnlyField
                 label="Employee Code"
                 value={profileData.employeeCode || 'N/A'}
@@ -344,11 +417,18 @@ export default function ProfilePage() {
                 value={profileData.gender || 'N/A'}
                 tooltip="Your gender information"
               />
-              <ReadOnlyField
-                label="Date of Birth"
-                value={profileData.dob ? formatDate(profileData.dob) : 'N/A'}
-                tooltip="Your date of birth"
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-foreground flex items-center gap-2">
+                  Date of Birth
+                  <Badge variant="secondary" className="uppercase text-[10px]">Editable</Badge>
+                </label>
+                <Input
+                  type="date"
+                  value={editableValues.dob}
+                  onChange={(e) => handleEditableChange('dob', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Your date of birth</p>
+              </div>
               <ReadOnlyField
                 label="Employment Type"
                 value={profileData.employmentType ? profileData.employmentType.replace('_', ' ').toUpperCase() : 'N/A'}
@@ -359,6 +439,13 @@ export default function ProfilePage() {
                 value={profileData.status ? profileData.status.charAt(0).toUpperCase() + profileData.status.slice(1) : 'N/A'}
                 tooltip="Your current employment status"
               />
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+              {saveError && <p className="text-sm text-red-500">{saveError}</p>}
+              {saveSuccess && <p className="text-sm text-green-600">{saveSuccess}</p>}
+              <Button onClick={handleSave} disabled={isSaving} className="sm:w-auto w-full">
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
             </div>
           </CardContent>
         </Card>
