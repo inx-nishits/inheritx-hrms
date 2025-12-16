@@ -52,4 +52,17 @@ export const apiEndPoints = {
     getAttendance: (id: string | number) => `/attendance/status/${id}`,
     getEmployeeAttendance: (id: string | number) => `/attendance/employee/${id}`,
   },
+  // Leave Management APIs
+  leave: {
+    // Get all leave types with details for organization
+    getLeaveTypes: "/leave/types",
+    // Create a new leave request
+    createLeave: "/leave",
+    // Get employee leave balance for a specific leave type
+    getLeaveBalance: (employeeId: string | number, leaveTypeId: string | number) =>
+      `/leave/balance/${employeeId}/${leaveTypeId}`,
+    // Get employee leave requests (paginated)
+    getEmployeeLeaves: (employeeId: string | number) =>
+      `/leave/employee/${employeeId}`,
+  },
 };

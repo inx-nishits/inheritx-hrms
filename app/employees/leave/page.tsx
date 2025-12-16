@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,13 +12,41 @@ import {
   Search, MoreVertical, Info, TrendingUp, Coffee
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { leaveTypes } from '@/lib/mockData';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { filterDataByRole } from '@/lib/auth';
+import { api } from '@/lib/api';
+import { ToastContainer, useToast } from '@/components/ui/Toast';
+
+interface LeaveType {
+  id: string;
+  name: string;
+  code?: string;
+  annualQuota?: number;
+}
+
+interface LeaveBalanceApiResponse {
+  data?: any;
+  [key: string]: any;
+}
+
+interface EmployeeLeaveRequest {
+  id: string;
+  fromDate: string; // formatted date string
+  toDate?: string; // formatted date string
+  days: number; // total days
+  leaveTypeName: string; // e.g. "Casual Leave"
+  status: string;
+  requestedBy?: string;
+  actionOn?: string;
+  note?: string;
+  reason?: string;
+}
 
 export default function LeavePage() {
   const { user } = useAuth();
+  const employeeId = user?.employeeId;
+  const { toasts, removeToast, success, error: showError } = useToast();
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showEncashmentModal, setShowEncashmentModal] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -28,25 +56,258 @@ export default function LeavePage() {
   const [selectedYear, setSelectedYear] = useState('Jan 2025 - Dec 2025');
   const [activePolicyTab, setActivePolicyTab] = useState('Birthday Leave');
 
-  // Mock data
-  const leaveBalances = [
-    { type: 'Casual Leave', available: 2, consumed: 10.5, accrued: 8, carryover: 2, annual: 8, color: '#EF4444' },
-    { type: 'Emergency Leave!', available: 0.5, consumed: 1.5, accrued: 2, carryover: 0, annual: 2, color: '#10B981' },
-    { type: 'Sick Leave', available: 1, consumed: 3, accrued: 4, carryover: 0, annual: 4, color: '#F59E0B' },
-    { type: 'Unpaid Leave', available: Infinity, consumed: 2, accrued: Infinity, carryover: 0, annual: Infinity, color: '#FBBF24' },
-    { type: 'Annual Leave', available: 15, consumed: 5, accrued: 20, carryover: 0, annual: 20, color: '#3B82F6' },
-  ];
+  // Server-driven state
+  const [leaveTypesData, setLeaveTypesData] = useState<LeaveType[]>([]);
+  const [leaveBalances, setLeaveBalances] = useState<
+    {
+      type: string;
+      leaveTypeId: string;
+      available: number;
+      consumed: number;
+      accrued: number;
+      carryover: number;
+      annual: number;
+      color: string;
+    }[]
+  >([]);
+  const [leaveHistory, setLeaveHistory] = useState<EmployeeLeaveRequest[]>([]);
+  const [pendingLeaveRequests, setPendingLeaveRequests] = useState<EmployeeLeaveRequest[]>([]);
 
-  const pendingLeaveRequests: any[] = [];
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [balancesError, setBalancesError] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
-  // Mock leave history - In real app, filter by user.id
-  // For now, showing sample data for the current employee
-  const leaveHistory = [
-    { dates: '30 Oct 2025, 1 Day', type: 'Sick Leave', status: 'Approved by Meera Tank', requestedBy: 'You', actionOn: '03 Nov 2025', note: "I'm not feeling well today and have a fever, so I'll be taking the day off.", reason: '' },
-    { dates: '24 Oct 2025, 1 Day', type: 'Unpaid Leave', status: 'Approved by Attendance Penalisation Policy', requestedBy: 'System', actionOn: '27 Oct 2025', note: 'Leave deducted as no attendance logged for 24-10-2025', reason: '' },
-    { dates: '03 Oct 2025, 1 Day', type: 'Casual Leave', status: 'Cancelled by You', requestedBy: 'You', actionOn: '17 Sep 2025', note: 'I would like to request 1 day leave for the Mundan (Babri) ceremony...', reason: 'Due to change in plan (October - No leave month)' },
-    { dates: '26 Sept 2025, 1 Day', type: 'Casual Leave', status: 'Approved by Aiyub Munshi', requestedBy: 'You', actionOn: '11 Sep 2025', note: 'I would like to request leave as I am planning a trip with friends.', reason: '' },
-  ];
+  // Pagination for employee leave requests
+  const [leaveRequestsPage, setLeaveRequestsPage] = useState(1);
+  const [hasMoreLeaveRequests, setHasMoreLeaveRequests] = useState(true);
+
+  // Apply Leave form state
+  const [applyLeaveType, setApplyLeaveType] = useState<string>('');
+  const [applyStartDate, setApplyStartDate] = useState<string>('');
+  const [applyEndDate, setApplyEndDate] = useState<string>('');
+  const [applyReason, setApplyReason] = useState<string>('');
+  const [applySubmitting, setApplySubmitting] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+
+  const applyTotalDays = useMemo(() => {
+    if (!applyStartDate || !applyEndDate) return 0;
+    const start = new Date(applyStartDate);
+    const end = new Date(applyEndDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 0;
+    const diffMs = end.getTime() - start.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays > 0 ? diffDays : 0;
+  }, [applyStartDate, applyEndDate]);
+
+  // Simple, consistent color palette for leave types
+  const leaveColors = ['#EF4444', '#10B981', '#F59E0B', '#FBBF24', '#3B82F6', '#8B5CF6', '#EC4899'];
+
+  // Fetch leave types and balances
+  useEffect(() => {
+    if (!employeeId) return;
+
+    let isCancelled = false;
+    const fetchData = async () => {
+      setIsLoadingBalances(true);
+      setBalancesError(null);
+      try {
+        const typesResponse = await api.getLeaveTypes();
+        const typesPayload = (typesResponse as any).data ?? typesResponse;
+        const types: LeaveType[] = Array.isArray(typesPayload) ? typesPayload : typesPayload.items ?? [];
+
+        if (!Array.isArray(types)) {
+          throw new Error('Unexpected leave types response');
+        }
+
+        if (isCancelled) return;
+        setLeaveTypesData(types);
+
+        // Fetch balances per type in parallel
+        const balancesResponses = await Promise.all(
+          types.map(async (t) => {
+            try {
+              const res: LeaveBalanceApiResponse = await api.getEmployeeLeaveBalance(employeeId, t.id);
+              const payload = (res as any).data ?? res;
+
+              const available =
+                Number(
+                  payload.balance ??
+                  payload.available ??
+                  payload.remaining ??
+                  payload.availableBalance ??
+                  0
+                );
+              const consumed =
+                Number(
+                  payload.used ??
+                  payload.consumed ??
+                  payload.totalConsumed ??
+                  0
+                );
+              const accrued =
+                Number(payload.accrued ?? payload.accruedSoFar ?? payload.totalAccrued ?? 0);
+              const carryover =
+                Number(payload.carryover ?? payload.carryForward ?? payload.carry_over ?? 0);
+              const annual =
+                Number(
+                  payload.totalQuota ??
+                  payload.annualQuota ??
+                  payload.annual ??
+                  t.annualQuota ??
+                  available + consumed
+                ) || available + consumed;
+
+              return {
+                type: t.name,
+                leaveTypeId: t.id,
+                available,
+                consumed,
+                accrued,
+                carryover,
+                annual,
+              };
+            } catch (error) {
+              console.error('Failed to fetch balance for leave type', t, error);
+              return {
+                type: t.name,
+                leaveTypeId: t.id,
+                available: 0,
+                consumed: 0,
+                accrued: 0,
+                carryover: 0,
+                annual: t.annualQuota ?? 0,
+              };
+            }
+          })
+        );
+
+        if (isCancelled) return;
+
+        const enrichedBalances = balancesResponses.map((b, index) => ({
+          ...b,
+          // Assign colors deterministically
+          color: leaveColors[index % leaveColors.length],
+        }));
+
+        setLeaveBalances(enrichedBalances);
+      } catch (error: any) {
+        console.error(error);
+        if (!isCancelled) {
+          setBalancesError(error?.message ?? 'Failed to load leave balances');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingBalances(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [employeeId]);
+
+  // Helper to load employee leave requests (history + pending)
+  const loadEmployeeLeaves = useCallback(
+    async (page: number, append: boolean = false) => {
+      if (!employeeId) return;
+
+      if (!append) {
+        setIsLoadingHistory(true);
+        setHistoryError(null);
+      }
+
+      try {
+        const res = await api.getEmployeeLeaves(employeeId, { page, limit: 5 });
+        const root: any = res;
+
+        // Normalize different possible response shapes:
+        // - { data: [...] }
+        // - { data: { data: [...], meta: {...} } }
+        // - { items: [...] } / { results: [...] }
+        let rawItems: any[] = [];
+        if (Array.isArray(root.data)) {
+          rawItems = root.data;
+        } else if (root.data && Array.isArray(root.data.data)) {
+          rawItems = root.data.data;
+        } else if (Array.isArray(root.items)) {
+          rawItems = root.items;
+        } else if (Array.isArray(root.results)) {
+          rawItems = root.results;
+        } else if (Array.isArray(root)) {
+          rawItems = root;
+        }
+
+        const items: EmployeeLeaveRequest[] = rawItems.map((item: any) => {
+          const fromDateIso = item.startDate ?? item.fromDate;
+          const toDateIso = item.endDate ?? item.toDate ?? item.startDate ?? item.fromDate;
+
+          const formatDate = (value?: string) => {
+            if (!value) return '';
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return value;
+            return d.toISOString().slice(0, 10);
+          };
+
+          const days = Number(item.totalDays ?? item.days ?? 0) || 0;
+
+          const leaveTypeName =
+            item.leaveTypeName ??
+            item.leaveType?.name ??
+            item.leaveType?.leaveType ??
+            '';
+
+          const requestedBy =
+            item.requestedBy ??
+            (item.employee
+              ? `${item.employee.firstName ?? ''} ${item.employee.lastName ?? ''}`.trim()
+              : user?.name ?? 'You');
+
+          const actionOn = item.actionOn ?? item.createdAt ?? fromDateIso;
+
+          return {
+            id: item.id,
+            fromDate: formatDate(fromDateIso),
+            toDate: formatDate(toDateIso),
+            days,
+            leaveTypeName,
+            status: item.status ?? '',
+            requestedBy,
+            actionOn: formatDate(actionOn),
+            note: item.reason ?? item.note ?? '',
+            reason: item.rejectReason ?? '',
+          };
+        });
+
+        setHasMoreLeaveRequests(items.length === 5);
+        setLeaveRequestsPage(page);
+
+        setLeaveHistory((prev) => {
+          const updated = append ? [...prev, ...items] : items;
+          const pendingOnly = updated.filter((item) =>
+            item.status?.toLowerCase().includes('pending')
+          );
+          setPendingLeaveRequests(pendingOnly);
+          return updated;
+        });
+      } catch (error: any) {
+        console.error('Failed to load leave history', error);
+        setHistoryError(error?.message ?? 'Failed to load leave history');
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    },
+    [employeeId]
+  );
+
+  // Initial fetch of leave history / requests
+  useEffect(() => {
+    if (!employeeId) return;
+    loadEmployeeLeaves(1, false);
+  }, [employeeId, loadEmployeeLeaves]);
 
   const compensatoryOffHistory = [
     { requestDate: '07 Jan 2025', days: 0.5, leaveType: 'Casual Leave', requestedOn: '08 Jan 2025', note: 'Awarded by Meera Tank', status: 'Approved by Meera Tank', reason: 'Worked 4 hour due to project emergency' },
@@ -54,11 +315,17 @@ export default function LeavePage() {
     { requestDate: '01 Mar 2025', days: 1, leaveType: 'Casual Leave', requestedOn: '03 Apr 2025', note: 'Awarded by Meera Tank', status: 'Approved by Meera Tank', reason: 'Leave credited Against working on Saturday du...' },
   ];
 
-  const filteredHistory = leaveHistory.filter(leave => {
-    if (selectedStatus !== 'All' && !leave.status.toLowerCase().includes(selectedStatus.toLowerCase())) return false;
-    if (selectedLeaveType !== 'All Types' && leave.type !== selectedLeaveType) return false;
-    return true;
-  });
+  const filteredHistory = useMemo(() => {
+    return leaveHistory.filter((leave) => {
+      if (selectedStatus !== 'All' && selectedStatus !== 'All Status') {
+        if (!leave.status?.toLowerCase().includes(selectedStatus.toLowerCase())) return false;
+      }
+      if (selectedLeaveType !== 'All Types') {
+        if (leave.leaveTypeName !== selectedLeaveType) return false;
+      }
+      return true;
+    });
+  }, [leaveHistory, selectedStatus, selectedLeaveType]);
 
   return (
     <ProtectedRoute allowedRoles={['employee']}>
@@ -87,20 +354,51 @@ export default function LeavePage() {
             <CardTitle className="text-xl font-bold">Pending Leave Requests</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            {pendingLeaveRequests.length === 0 ? (
+            {isLoadingHistory && pendingLeaveRequests.length === 0 ? (
+              <div className="animate-pulse text-sm text-muted-foreground py-4">
+                Loading pending requests...
+              </div>
+            ) : pendingLeaveRequests.length === 0 ? (
               <div className="text-center py-12 bg-gradient-to-br from-blue-50 to-blue-100/30 dark:from-blue-950/20 dark:to-blue-900/10 rounded-xl border-2 border-blue-200/50 dark:border-blue-800/50">
                 <div className="text-4xl mb-3">🎉</div>
                 <p className="text-lg font-semibold mb-2">Hurray! No pending leave requests</p>
                 <p className="text-sm text-muted-foreground">Request leave on the right!</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {pendingLeaveRequests.map((req) => (
-                  <div key={req.id} className="p-4 border-2 border-border rounded-lg">
-                    {/* Leave request item */}
+              <>
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {pendingLeaveRequests.map((req) => {
+                  const dateLabel = req.toDate && req.toDate !== req.fromDate
+                    ? `${req.fromDate} → ${req.toDate}, ${req.days} Day(s)`
+                    : `${req.fromDate}, ${req.days} Day(s)`;
+                  return (
+                    <div key={req.id} className="p-4 border-2 border-border rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold">{req.leaveTypeName}</p>
+                        <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="warning" className="text-xs">
+                          {req.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                  })}
+                </div>
+                {hasMoreLeaveRequests && (
+                  <div className="pt-3 flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoadingHistory}
+                      onClick={() => loadEmployeeLeaves(leaveRequestsPage + 1, true)}
+                    >
+                      {isLoadingHistory ? 'Loading...' : 'Load more'}
+                    </Button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -131,89 +429,124 @@ export default function LeavePage() {
 
         {/* Leave Balances */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {leaveBalances.map((leave, idx) => {
-            const percentage = leave.available === Infinity ? 100 : (leave.available / leave.annual) * 100;
-            return (
-              <motion.div
+          {isLoadingBalances && leaveBalances.length === 0 ? (
+            Array.from({ length: 4 }).map((_, idx) => (
+              <div
                 key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                className="border-2 border-border/50 rounded-xl p-4 space-y-4 animate-pulse bg-background/50"
               >
-                <Card className="border-2 border-border/50 shadow-lg hover:shadow-xl transition-shadow h-full">
-                  <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-bold">{leave.type}</CardTitle>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <div className="relative w-32 h-32 mx-auto mb-2">
-                          <svg className="transform -rotate-90 w-32 h-32">
-                            <circle
-                              cx="64"
-                              cy="64"
-                              r="56"
-                              stroke="currentColor"
-                              strokeWidth="8"
-                              fill="none"
-                              className="text-muted/20"
-                            />
-                            <circle
-                              cx="64"
-                              cy="64"
-                              r="56"
-                              stroke={leave.color}
-                              strokeWidth="8"
-                              fill="none"
-                              strokeDasharray={`${2 * Math.PI * 56}`}
-                              strokeDashoffset={`${2 * Math.PI * 56 * (1 - percentage / 100)}`}
-                              className="transition-all duration-500"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl font-bold" style={{ color: leave.color }}>
-                              {leave.available === Infinity ? '∞' : leave.available}
-                            </span>
-                            <span className="text-xs text-muted-foreground">Days Available</span>
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-32 w-32 mx-auto rounded-full bg-muted" />
+                <div className="space-y-2">
+                  <div className="h-3 w-full bg-muted rounded" />
+                  <div className="h-3 w-3/4 bg-muted rounded" />
+                </div>
+              </div>
+            ))
+          ) : balancesError ? (
+            <div className="col-span-full text-sm text-red-500 bg-red-500/5 border border-red-500/30 rounded-lg p-4">
+              {balancesError}
+            </div>
+          ) : leaveBalances.length === 0 ? (
+            <div className="col-span-full text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg p-4">
+              No leave balances available.
+            </div>
+          ) : (
+            leaveBalances.map((leave, idx) => {
+              const annual = leave.annual || leave.available + leave.consumed;
+              const percentage =
+                annual === 0 || !Number.isFinite(annual)
+                  ? 0
+                  : Math.max(0, Math.min(100, (leave.available / annual) * 100));
+
+              return (
+                <motion.div
+                  key={leave.leaveTypeId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.08 }}
+                >
+                  <Card className="border-2 border-border/50 shadow-lg hover:shadow-xl transition-shadow h-full">
+                    <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base font-bold">{leave.type}</CardTitle>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="relative w-32 h-32 mx-auto mb-2">
+                            <svg className="transform -rotate-90 w-32 h-32">
+                              <circle
+                                cx="64"
+                                cy="64"
+                                r="56"
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                fill="none"
+                                className="text-muted/20"
+                              />
+                              <circle
+                                cx="64"
+                                cy="64"
+                                r="56"
+                                stroke={leave.color}
+                                strokeWidth="8"
+                                fill="none"
+                                strokeDasharray={`${2 * Math.PI * 56}`}
+                                strokeDashoffset={`${2 * Math.PI * 56 * (1 - percentage / 100)}`}
+                                className="transition-all duration-500"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-2xl font-bold" style={{ color: leave.color }}>
+                                {Number.isFinite(leave.available) ? leave.available : '∞'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">Days Available</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Available:</span>
-                          <span className="font-semibold">{leave.available === Infinity ? '∞' : leave.available}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Consumed:</span>
-                          <span className="font-semibold">{leave.consumed}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Accrued So Far:</span>
-                          <span className="font-semibold">{leave.accrued === Infinity ? '∞' : leave.accrued}</span>
-                        </div>
-                        {leave.carryover > 0 && (
+                        <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Carryover:</span>
-                            <span className="font-semibold">{leave.carryover}</span>
+                            <span className="text-muted-foreground">Available:</span>
+                            <span className="font-semibold">
+                              {Number.isFinite(leave.available) ? leave.available : '∞'}
+                            </span>
                           </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Annual Quota:</span>
-                          <span className="font-semibold">{leave.annual === Infinity ? '∞' : leave.annual}</span>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Consumed:</span>
+                            <span className="font-semibold">{leave.consumed}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Accrued So Far:</span>
+                            <span className="font-semibold">
+                              {Number.isFinite(leave.accrued) ? leave.accrued : '∞'}
+                            </span>
+                          </div>
+                          {leave.carryover > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Carryover:</span>
+                              <span className="font-semibold">{leave.carryover}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Annual Quota:</span>
+                            <span className="font-semibold">
+                              {Number.isFinite(annual) ? annual : '∞'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })
+          )}
         </div>
 
         {/* Other Leave Types */}
@@ -235,7 +568,10 @@ export default function LeavePage() {
                   placeholder="Leave Type"
                   value={selectedLeaveType}
                   onChange={setSelectedLeaveType}
-                  options={['All Types', 'Casual Leave', 'Emergency Leave!', 'Sick Leave', 'Annual Leave', 'Unpaid Leave']}
+                  options={[
+                    'All Types',
+                    ...leaveBalances.map((lb) => lb.type),
+                  ]}
                   classNames={{
                     base: "w-[150px]",
                   }}
@@ -266,64 +602,189 @@ export default function LeavePage() {
                 <div className="col-span-2">ACTION TAKEN ON</div>
                 <div className="col-span-2">LEAVE NOTE</div>
               </div>
-              {filteredHistory.map((leave, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="grid grid-cols-12 gap-4 p-4 border-2 border-border rounded-lg hover:bg-accent/50 hover:border-primary/30 transition-all"
-                >
-                  <div className="col-span-2">
-                    <span className="text-sm font-medium">{leave.dates}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-sm">{leave.type}</span>
-                    <p className="text-xs text-muted-foreground">Requested on {leave.actionOn}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <Badge variant={leave.status.includes('Approved') ? 'success' : leave.status.includes('Cancelled') ? 'danger' : 'warning'}>
-                      {leave.status}
-                    </Badge>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-sm">{leave.requestedBy}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-sm">{leave.actionOn}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-sm text-muted-foreground line-clamp-2">{leave.note}</span>
-                    {leave.reason && (
-                      <p className="text-xs text-red-500 mt-1">Reason: {leave.reason}</p>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+              {(() => {
+                if (isLoadingHistory) {
+                  return (
+                    <div className="py-6 text-sm text-muted-foreground animate-pulse">
+                      Loading leave history...
+                    </div>
+                  );
+                }
+
+                if (historyError) {
+                  return (
+                    <div className="py-4 text-sm text-red-500 bg-red-500/5 border border-red-500/30 rounded-lg px-4">
+                      {historyError}
+                    </div>
+                  );
+                }
+
+                if (filteredHistory.length === 0) {
+                  return (
+                    <div className="py-6 text-sm text-muted-foreground text-center">
+                      No leave history found for the selected filters.
+                    </div>
+                  );
+                }
+
+                return filteredHistory.map((leave, idx) => {
+                  const dateLabel =
+                    leave.toDate && leave.toDate !== leave.fromDate
+                      ? `${leave.fromDate} → ${leave.toDate}, ${leave.days} Day(s)`
+                      : `${leave.fromDate}, ${leave.days} Day(s)`;
+
+                  const requestedBy = leave.requestedBy ?? (user?.name ? 'You' : 'Employee');
+                  const actionOn = leave.actionOn ?? leave.fromDate;
+
+                  return (
+                    <motion.div
+                      key={leave.id ?? idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="grid grid-cols-12 gap-4 p-4 border-2 border-border rounded-lg hover:bg-accent/50 hover:border-primary/30 transition-all"
+                    >
+                      <div className="col-span-2">
+                        <span className="text-sm font-medium">{dateLabel}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm">{leave.leaveTypeName}</span>
+                        <p className="text-xs text-muted-foreground">Requested on {actionOn}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <Badge
+                          variant={
+                            leave.status?.toLowerCase().includes('approved')
+                              ? 'success'
+                              : leave.status?.toLowerCase().includes('cancel')
+                              ? 'danger'
+                              : leave.status?.toLowerCase().includes('reject')
+                              ? 'danger'
+                              : 'warning'
+                          }
+                        >
+                          {leave.status}
+                        </Badge>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm">{requestedBy}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm">{actionOn}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm text-muted-foreground line-clamp-2">
+                          {leave.note}
+                        </span>
+                        {leave.reason && (
+                          <p className="text-xs text-red-500 mt-1">Reason: {leave.reason}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                });
+              })()}
             </div>
           </CardContent>
         </Card>
 
         {/* Modals */}
         <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} title="Request Leave" size="md">
-          <form className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!employeeId) {
+                setApplyError('Employee information is missing.');
+                return;
+              }
+
+              const selectedLeave = leaveBalances.find((lb) => lb.type === applyLeaveType);
+              if (!selectedLeave) {
+                setApplyError('Please select a leave type.');
+                return;
+              }
+
+              if (!applyStartDate || !applyEndDate || applyTotalDays <= 0) {
+                setApplyError('Please select a valid date range.');
+                return;
+              }
+
+              if (!applyReason.trim()) {
+                setApplyError('Please provide a reason for your leave.');
+                return;
+              }
+
+              setApplySubmitting(true);
+              setApplyError(null);
+
+              try {
+                await api.createLeaveRequest({
+                  employeeId,
+                  leaveTypeId: selectedLeave.leaveTypeId,
+                  startDate: applyStartDate,
+                  endDate: applyEndDate,
+                  totalDays: applyTotalDays,
+                  status: 'pending',
+                  reason: applyReason.trim(),
+                });
+
+                // Refresh pending + history
+                loadEmployeeLeaves(1, false);
+
+                // Reset form and close
+                setApplyLeaveType('');
+                setApplyStartDate('');
+                setApplyEndDate('');
+                setApplyReason('');
+                setShowApplyModal(false);
+                success('Leave request submitted successfully');
+              } catch (error: any) {
+                console.error('Failed to create leave request', error);
+                const message =
+                  error?.message ?? 'Failed to create leave request. Please try again.';
+                setApplyError(message);
+                showError(message);
+              } finally {
+                setApplySubmitting(false);
+              }
+            }}
+          >
             <div>
               <label className="block text-sm font-semibold mb-2 text-foreground">
                 Leave Type <span className="text-red-500">*</span>
               </label>
               <NextUISelect
                 placeholder="Select leave type"
-                value=""
-                onChange={() => {}}
-                options={leaveTypes}
+                value={applyLeaveType}
+                onChange={setApplyLeaveType}
+                options={leaveBalances.map((lb) => lb.type)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Start Date" type="date" required />
-              <Input label="End Date" type="date" required />
+              <Input
+                label="Start Date"
+                type="date"
+                required
+                value={applyStartDate}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApplyStartDate(e.target.value)}
+              />
+              <Input
+                label="End Date"
+                type="date"
+                required
+                value={applyEndDate}
+                min={applyStartDate || undefined}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApplyEndDate(e.target.value)}
+              />
             </div>
             <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Total Days: <span className="font-bold text-foreground">3</span></p>
+              <p className="text-sm text-muted-foreground">
+                Total Days:{' '}
+                <span className="font-bold text-foreground">
+                  {applyTotalDays > 0 ? applyTotalDays : '-'}
+                </span>
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5 text-foreground">Reason</label>
@@ -331,11 +792,26 @@ export default function LeavePage() {
                 className="w-full min-h-[100px] px-3 py-2 border border-input rounded-md bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-theme"
                 placeholder="Enter reason for leave..."
                 required
+                value={applyReason}
+                onChange={(e) => setApplyReason(e.target.value)}
               />
             </div>
+            {applyError && (
+              <p className="text-sm text-red-500">{applyError}</p>
+            )}
             <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1">Submit Application</Button>
-              <Button type="button" variant="outline" onClick={() => setShowApplyModal(false)} className="flex-1">
+              <Button type="submit" className="flex-1" disabled={applySubmitting}>
+                {applySubmitting ? 'Submitting...' : 'Submit Application'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowApplyModal(false);
+                  setApplyError(null);
+                }}
+                className="flex-1"
+              >
                 Cancel
               </Button>
             </div>
@@ -492,6 +968,7 @@ export default function LeavePage() {
             </div>
           </div>
         </Modal>
+        <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
     </ProtectedRoute>
   );

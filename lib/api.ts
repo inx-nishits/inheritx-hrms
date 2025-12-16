@@ -433,4 +433,46 @@ export const api = {
 
     return authenticatedFetch(url);
   },
+
+  // Leave Management APIs
+  getLeaveTypes: async () => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.leave.getLeaveTypes}`);
+  },
+
+  getEmployeeLeaveBalance: async (employeeId: string | number, leaveTypeId: string | number) => {
+    return authenticatedFetch(
+      `${API_BASE_URL}${apiEndPoints.leave.getLeaveBalance(employeeId, leaveTypeId)}`
+    );
+  },
+
+  getEmployeeLeaves: async (
+    employeeId: string | number,
+    params?: { page?: number; limit?: number }
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${API_BASE_URL}${apiEndPoints.leave.getEmployeeLeaves(employeeId)}?${queryString}`
+      : `${API_BASE_URL}${apiEndPoints.leave.getEmployeeLeaves(employeeId)}`;
+
+    return authenticatedFetch(url);
+  },
+
+  createLeaveRequest: async (payload: {
+    employeeId: string;
+    leaveTypeId: string;
+    startDate: string;
+    endDate: string;
+    totalDays: number;
+    status?: string;
+    reason?: string;
+  }) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.leave.createLeave}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
