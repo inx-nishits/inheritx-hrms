@@ -21,8 +21,28 @@ import {
 import { motion } from 'framer-motion';
 import { NextUISelect } from '@/components/ui/NextUISelect';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { ToastContainer, useToast } from '@/components/ui/Toast';
+
+interface PendingLeave {
+  id: string;
+  employeeName: string;
+  department?: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  requestedOn: string;
+  status: string;
+}
 
 export default function HRLeavePendingPage() {
+  const { user } = useAuth();
+  const approverEmployeeId = user?.employeeId;
+  const { toasts, removeToast, success, error: showError } = useToast();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -31,88 +51,150 @@ export default function HRLeavePendingPage() {
   }, []);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedLeaveType, setSelectedLeaveType] = useState('all');
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<PendingLeave | null>(null);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
-  // Mock leave requests
-  const leaveRequests = [
-    { 
-      id: '1', 
-      employee: 'John Doe', 
-      department: 'Engineering', 
-      type: 'Sick Leave', 
-      startDate: '2025-11-15', 
-      endDate: '2025-11-16', 
-      days: 2, 
-      reason: 'Feeling unwell, need to rest',
-      requestedOn: '2025-11-11',
-      status: 'pending'
-    },
-    { 
-      id: '2', 
-      employee: 'Jane Smith', 
-      department: 'Marketing', 
-      type: 'Casual Leave', 
-      startDate: '2025-11-18', 
-      endDate: '2025-11-18', 
-      days: 1, 
-      reason: 'Personal work',
-      requestedOn: '2025-11-10',
-      status: 'pending'
-    },
-    { 
-      id: '3', 
-      employee: 'Mike Johnson', 
-      department: 'Sales', 
-      type: 'Emergency Leave!', 
-      startDate: '2025-11-12', 
-      endDate: '2025-11-12', 
-      days: 0.5, 
-      reason: 'Family emergency',
-      requestedOn: '2025-11-11',
-      status: 'pending'
-    },
-    { 
-      id: '4', 
-      employee: 'Sarah Williams', 
-      department: 'HR', 
-      type: 'Casual Leave', 
-      startDate: '2025-11-20', 
-      endDate: '2025-11-22', 
-      days: 3, 
-      reason: 'Vacation with family',
-      requestedOn: '2025-11-09',
-      status: 'pending'
-    },
-  ];
+  const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const departments = ['All Departments', 'Engineering', 'Marketing', 'Sales', 'HR', 'Design'];
   const leaveTypes = ['All Types', 'Casual Leave', 'Emergency Leave!', 'Sick Leave', 'Annual Leave', 'Unpaid Leave'];
 
-  const filteredRequests = leaveRequests.filter(req => {
-    const matchesSearch = req.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         req.department.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredRequests = pendingLeaves.filter(req => {
+    const matchesSearch =
+      req.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (req.department || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDept = selectedDepartment === 'all' || req.department === selectedDepartment;
     const matchesType = selectedLeaveType === 'all' || req.type === selectedLeaveType;
     return matchesSearch && matchesDept && matchesType;
   });
 
-  const handleAction = (request: any, type: 'approve' | 'reject') => {
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  const fetchPendingLeaves = async (pageToLoad: number) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await api.getPendingLeaves({ page: pageToLoad, limit });
+      const root: any = res;
+
+      const dataArray: any[] = Array.isArray(root.data)
+        ? root.data
+        : Array.isArray(root?.data?.data)
+          ? root.data.data
+          : Array.isArray(root.items)
+            ? root.items
+            : Array.isArray(root.results)
+              ? root.results
+              : Array.isArray(root)
+                ? root
+                : [];
+
+      const mapped: PendingLeave[] = dataArray.map((item: any) => {
+        const employeeName =
+          item.employeeName ??
+          (item.employee
+            ? `${item.employee.firstName ?? ''} ${item.employee.lastName ?? ''}`.trim()
+            : 'Employee');
+
+        const department =
+          item.department ?? item.employee?.department ?? '—';
+
+        const formatDate = (value?: string) => {
+          if (!value) return '';
+          const d = new Date(value);
+          if (Number.isNaN(d.getTime())) return value;
+          return d.toISOString().slice(0, 10);
+        };
+
+        const start = item.startDate ?? item.fromDate;
+        const end = item.endDate ?? item.toDate ?? start;
+
+        return {
+          id: item.id,
+          employeeName,
+          department,
+          type: item.leaveType?.name ?? item.type ?? '',
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+          days: Number(item.totalDays ?? item.days ?? 0) || 0,
+          reason: item.reason ?? '',
+          requestedOn: formatDate(item.createdAt ?? item.requestedOn ?? start),
+          status: item.status ?? 'pending',
+        };
+      });
+
+      setPendingLeaves(mapped);
+      setPage(pageToLoad);
+
+      const meta = root.meta ?? root.data?.meta;
+      if (meta && typeof meta.total === 'number') {
+        setTotal(meta.total);
+      } else {
+        setTotal(mapped.length);
+      }
+    } catch (err: any) {
+      console.error('Failed to load pending leaves', err);
+      setError(err?.message ?? 'Failed to load pending leave requests.');
+      showError(err?.message ?? 'Failed to load pending leave requests.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAction = (request: PendingLeave, type: 'approve' | 'reject') => {
     setSelectedRequest(request);
     setActionType(type);
     setShowActionModal(true);
   };
 
-  const confirmAction = () => {
-    // Handle approve/reject logic here
-    setShowActionModal(false);
-    setSelectedRequest(null);
-    setActionType(null);
+  const confirmAction = async () => {
+    if (!selectedRequest || !actionType || !approverEmployeeId) {
+      setShowActionModal(false);
+      setSelectedRequest(null);
+      setActionType(null);
+      return;
+    }
+
+    try {
+      setIsSubmittingAction(true);
+      const status = actionType === 'approve' ? 'approved' : 'rejected';
+      await api.updateLeaveStatus(selectedRequest.id, {
+        status,
+        approvedBy: approverEmployeeId,
+      });
+
+      success(
+        `Leave request ${actionType === 'approve' ? 'approved' : 'rejected'} successfully`
+      );
+
+      setShowActionModal(false);
+      setSelectedRequest(null);
+      setActionType(null);
+
+      fetchPendingLeaves(page);
+    } catch (err: any) {
+      console.error('Failed to update leave status', err);
+      showError(err?.message ?? 'Failed to update leave status.');
+    } finally {
+      setIsSubmittingAction(false);
+    }
   };
 
+  useEffect(() => {
+    fetchPendingLeaves(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <ProtectedRoute allowedRoles={['hr', 'HR Manager']}>
+    <ProtectedRoute allowedRoles={['hr', 'HR Manager', 'System Admin']}>
       <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -121,7 +203,7 @@ export default function HRLeavePendingPage() {
           <p className="text-xs text-muted-foreground mt-0.5">Review and approve leave requests from employees</p>
         </div>
         <Badge variant="warning" className="text-sm px-3 py-1">
-          {filteredRequests.length} Pending
+          {total} Pending
         </Badge>
       </div>
 
@@ -140,7 +222,7 @@ export default function HRLeavePendingPage() {
               />
             </div>
             <NextUISelect
-              label="Department"
+              // No label to keep text from overlapping inside the trigger
               placeholder="Select department"
               value={selectedDepartment === 'all' ? '' : selectedDepartment}
               onChange={(value) => setSelectedDepartment(value || 'all')}
@@ -150,7 +232,7 @@ export default function HRLeavePendingPage() {
               }))}
             />
             <NextUISelect
-              label="Leave Type"
+              // No label to keep text from overlapping inside the trigger
               placeholder="Select leave type"
               value={selectedLeaveType === 'all' ? '' : selectedLeaveType}
               onChange={(value) => setSelectedLeaveType(value || 'all')}
@@ -176,10 +258,17 @@ export default function HRLeavePendingPage() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-3">
-            {filteredRequests.length === 0 ? (
+            {isLoading && filteredRequests.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50 animate-pulse" />
+                <p className="text-sm text-muted-foreground">Loading pending leave requests...</p>
+              </div>
+            ) : filteredRequests.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">No pending leave requests</p>
+                <p className="text-sm text-muted-foreground">
+                  {error || 'No pending leave requests'}
+                </p>
               </div>
             ) : (
               filteredRequests.map((request, idx) => (
@@ -192,11 +281,11 @@ export default function HRLeavePendingPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
-                      <Avatar name={request.employee} size="md" />
+                      <Avatar name={request.employeeName} size="md" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="text-sm font-semibold text-foreground">
-                            {request.employee}
+                            {request.employeeName}
                           </h3>
                           <Badge variant="warning" className="text-[9px] px-1.5 py-0 h-4">
                             {request.status}
@@ -230,11 +319,10 @@ export default function HRLeavePendingPage() {
                           <p className="text-xs text-foreground">{request.reason}</p>
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-2">
-                          Requested on {
-                            isMounted
-                              ? new Date(request.requestedOn).toLocaleDateString('en-US')
-                              : new Date(request.requestedOn).toISOString().split('T')[0]
-                          }
+                          Requested on{' '}
+                          {isMounted
+                            ? new Date(request.requestedOn).toLocaleDateString('en-US')
+                            : new Date(request.requestedOn).toISOString().split('T')[0]}
                         </p>
                       </div>
                     </div>
@@ -266,6 +354,30 @@ export default function HRLeavePendingPage() {
         </CardContent>
       </Card>
 
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 1 || isLoading}
+            onClick={() => fetchPendingLeaves(page - 1)}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages || isLoading}
+            onClick={() => fetchPendingLeaves(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
       {/* Action Modal */}
       <Modal 
         isOpen={showActionModal} 
@@ -281,7 +393,9 @@ export default function HRLeavePendingPage() {
           <div className="space-y-4">
             <div className="p-3 bg-muted/30 rounded-[8px]">
               <p className="text-sm text-muted-foreground mb-1">Employee:</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.employee}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {selectedRequest.employeeName}
+              </p>
             </div>
             <div className="p-3 bg-muted/30 rounded-[8px]">
               <p className="text-sm text-muted-foreground mb-1">Leave Details:</p>
@@ -318,14 +432,20 @@ export default function HRLeavePendingPage() {
               </Button>
               <Button
                 onClick={confirmAction}
+                disabled={isSubmittingAction}
                 className={`flex-1 ${actionType === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
               >
-                {actionType === 'approve' ? 'Approve' : 'Reject'}
+                {isSubmittingAction
+                  ? 'Processing...'
+                  : actionType === 'approve'
+                  ? 'Approve'
+                  : 'Reject'}
               </Button>
             </div>
           </div>
         )}
       </Modal>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
     </ProtectedRoute>
   );

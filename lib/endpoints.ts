@@ -58,6 +58,12 @@ export const apiEndPoints = {
     getLeaveTypes: "/leave/types",
     // Create a new leave request
     createLeave: "/leave",
+    // List all leave requests (for HR/Admin)
+    listAllLeaves: "/leave",
+    // Get all pending leave requests (for HR/Admin)
+    getPendingLeaves: "/leave/pending",
+    // Approve/Reject a leave request
+    updateLeaveStatus: (leaveId: string | number) => `/leave/${leaveId}/approve`,
     // Get employee leave balance for a specific leave type
     getLeaveBalance: (employeeId: string | number, leaveTypeId: string | number) =>
       `/leave/balance/${employeeId}/${leaveTypeId}`,

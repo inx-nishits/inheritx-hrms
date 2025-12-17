@@ -475,4 +475,42 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+
+  // HR Leave Management APIs
+  getAllLeaves: async (params?: { page?: number; limit?: number; sort?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.sort) searchParams.set('sort', params.sort);
+
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${API_BASE_URL}${apiEndPoints.leave.listAllLeaves}?${queryString}`
+      : `${API_BASE_URL}${apiEndPoints.leave.listAllLeaves}`;
+
+    return authenticatedFetch(url);
+  },
+
+  getPendingLeaves: async (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${API_BASE_URL}${apiEndPoints.leave.getPendingLeaves}?${queryString}`
+      : `${API_BASE_URL}${apiEndPoints.leave.getPendingLeaves}`;
+
+    return authenticatedFetch(url);
+  },
+
+  updateLeaveStatus: async (
+    leaveId: string,
+    payload: { status: 'approved' | 'rejected'; approvedBy: string }
+  ) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.leave.updateLeaveStatus(leaveId)}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
