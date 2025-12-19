@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { filterDataByRole } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
+import { LeaveDetailsSidebar } from '@/components/leave/LeaveDetailsSidebar';
 
 interface LeaveType {
   id: string;
@@ -77,10 +78,24 @@ export default function LeavePage() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [balancesError, setBalancesError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Pagination for employee leave requests
   const [leaveRequestsPage, setLeaveRequestsPage] = useState(1);
   const [hasMoreLeaveRequests, setHasMoreLeaveRequests] = useState(true);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuId(null);
+    };
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuId]);
 
   // Apply Leave form state
   const [applyLeaveType, setApplyLeaveType] = useState<string>('');
@@ -600,7 +615,8 @@ export default function LeavePage() {
                 <div className="col-span-2">STATUS</div>
                 <div className="col-span-2">REQUESTED BY</div>
                 <div className="col-span-2">ACTION TAKEN ON</div>
-                <div className="col-span-2">LEAVE NOTE</div>
+                <div className="col-span-1">LEAVE NOTE</div>
+                <div className="col-span-1">ACTIONS</div>
               </div>
               {(() => {
                 if (isLoadingHistory) {
@@ -672,12 +688,41 @@ export default function LeavePage() {
                       <div className="col-span-2">
                         <span className="text-sm">{actionOn}</span>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1">
                         <span className="text-sm text-muted-foreground line-clamp-2">
                           {leave.note}
                         </span>
                         {leave.reason && (
                           <p className="text-xs text-red-500 mt-1">Reason: {leave.reason}</p>
+                        )}
+                      </div>
+                      <div className="col-span-1 relative">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === leave.id ? null : leave.id);
+                          }}
+                          className="h-8 w-8 p-0"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        {openMenuId === leave.id && (
+                          <div className="absolute right-0 top-8 z-20 w-40 bg-card border border-border rounded-lg shadow-lg py-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLeaveId(leave.id);
+                                setIsSidebarOpen(true);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Request
+                            </button>
+                          </div>
                         )}
                       </div>
                     </motion.div>
@@ -968,6 +1013,17 @@ export default function LeavePage() {
             </div>
           </div>
         </Modal>
+
+        {/* Leave Details Sidebar */}
+        <LeaveDetailsSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => {
+            setIsSidebarOpen(false);
+            setSelectedLeaveId(null);
+          }}
+          leaveId={selectedLeaveId}
+        />
+
         <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
     </ProtectedRoute>

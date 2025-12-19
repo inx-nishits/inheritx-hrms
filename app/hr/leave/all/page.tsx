@@ -10,8 +10,17 @@ import { NextUISelect } from '@/components/ui/NextUISelect';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 import { api } from '@/lib/api';
-import { Calendar, Search, Building, FileText, Clock } from 'lucide-react';
+import {
+  Calendar,
+  Search,
+  Building,
+  FileText,
+  Clock,
+  MoreVertical,
+  Eye,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
+import { LeaveDetailsSidebar } from '@/components/leave/LeaveDetailsSidebar';
 
 interface OrganizationLeave {
   id: string;
@@ -43,10 +52,24 @@ export default function HRLeaveAllPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [total, setTotal] = useState(0);
+  const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuId(null);
+    };
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuId]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -324,6 +347,35 @@ export default function HRLeaveAllPage() {
                           </p>
                         </div>
                       </div>
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === leave.id ? null : leave.id);
+                          }}
+                          className="h-8 w-8 p-0"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        {openMenuId === leave.id && (
+                          <div className="absolute right-0 top-8 z-20 w-40 bg-card border border-border rounded-lg shadow-lg py-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLeaveId(leave.id);
+                                setIsSidebarOpen(true);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Request
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 ))
@@ -331,6 +383,16 @@ export default function HRLeaveAllPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Leave Details Sidebar */}
+        <LeaveDetailsSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => {
+            setIsSidebarOpen(false);
+            setSelectedLeaveId(null);
+          }}
+          leaveId={selectedLeaveId}
+        />
 
         {/* Pagination */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">

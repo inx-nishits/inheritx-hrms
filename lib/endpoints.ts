@@ -70,5 +70,7 @@ export const apiEndPoints = {
     // Get employee leave requests (paginated)
     getEmployeeLeaves: (employeeId: string | number) =>
       `/leave/employee/${employeeId}`,
+    // Get a single leave request by ID
+    getLeaveDetails: (leaveId: string | number) => `/leave/${leaveId}`,
   },
 };

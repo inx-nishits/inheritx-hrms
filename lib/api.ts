@@ -513,4 +513,8 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+
+  getLeaveDetails: async (leaveId: string | number) => {
+    return authenticatedFetch(`${API_BASE_URL}${apiEndPoints.leave.getLeaveDetails(leaveId)}`);
+  },
 };
