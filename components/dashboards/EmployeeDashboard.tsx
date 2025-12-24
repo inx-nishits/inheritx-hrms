@@ -9,12 +9,12 @@ import { Input } from '@/components/ui/Input';
 import { NextUISelect } from '@/components/ui/NextUISelect';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { 
-  Laptop, Home, Clock, FileText, Info, Calendar, 
+  Laptop, Home, Clock, FileText, Info, Calendar, Search, X,
   CheckCircle2, AlertCircle,
   TrendingUp, User, Users, Gift, MapPin, ArrowRight,
   CalendarDays
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
@@ -33,6 +33,8 @@ export default function EmployeeDashboard() {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showPartialDayDrawer, setShowPartialDayDrawer] = useState(false);
+  const [partialDayReason, setPartialDayReason] = useState<'lateArrival' | 'intervening' | 'leavingEarly'>('lateArrival');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -336,6 +338,7 @@ export default function EmployeeDashboard() {
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => setShowPartialDayDrawer(true)}
                 className="group w-full p-3 bg-gradient-to-br from-amber-50 to-amber-100/80 dark:from-amber-950/40 dark:to-amber-900/30 border border-amber-200/60 dark:border-amber-800/40 rounded-[8px] transition-all duration-200 hover:border-amber-300 dark:hover:border-amber-700"
               >
                 <div className="flex items-center gap-2.5">
@@ -783,6 +786,161 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </Modal>
+
+      <AnimatePresence>
+        {showPartialDayDrawer && (
+          <motion.div
+            className="fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowPartialDayDrawer(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+              className="absolute right-0 top-0 h-full w-full max-w-[460px] bg-[#0c1f2f] text-slate-100 shadow-2xl border-l border-white/10"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <div>
+                  <p className="text-lg font-semibold">Request partial day</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPartialDayDrawer(false)}
+                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="h-[calc(100%-136px)] overflow-y-auto px-6 py-5 space-y-5">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold">Select Date</label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      className="w-full bg-[#0e2739] border-white/10 text-slate-100 focus:border-emerald-400 focus:ring-emerald-500 pr-10"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold">Reason type</p>
+                  <div className="flex flex-wrap gap-4">
+                    {[
+                      { label: 'Late Arrival', value: 'lateArrival' as const },
+                      { label: 'Intervening Time-off', value: 'intervening' as const },
+                      { label: 'Leaving Early', value: 'leavingEarly' as const },
+                    ].map((option) => (
+                      <label
+                        key={option.label}
+                        className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          name="partialDayReason"
+                          checked={partialDayReason === option.value}
+                          onChange={() => setPartialDayReason(option.value)}
+                          className="h-4 w-4 accent-emerald-500"
+                        />
+                        <span className="text-slate-100">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {partialDayReason === 'lateArrival' && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-100">Will come late by</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="w-24 bg-[#0e2739] border-white/10 text-slate-100 focus:border-emerald-400 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-100">minutes</span>
+                  </div>
+                )}
+
+                {partialDayReason === 'intervening' && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-slate-100">Will leave at</span>
+                    <div className="relative">
+                      <Input
+                        type="time"
+                        className="w-28 bg-[#0e2739] border-white/10 text-slate-100 pr-10 focus:border-emerald-400 focus:ring-emerald-500"
+                      />
+                      <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
+                    </div>
+                    <span className="text-sm text-slate-100">for</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="w-24 bg-[#0e2739] border-white/10 text-slate-100 focus:border-emerald-400 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-100">minutes</span>
+                  </div>
+                )}
+
+                {partialDayReason === 'leavingEarly' && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-100">Will leave early by</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="w-24 bg-[#0e2739] border-white/10 text-slate-100 focus:border-emerald-400 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-100">minutes</span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold">Note</label>
+                  <textarea
+                    className="w-full min-h-[160px] rounded-md border border-white/10 bg-[#0e2739] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Note"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold">Notify</label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Search employee"
+                      className="w-full bg-[#0e2739] border-white/10 text-slate-100 placeholder:text-slate-400 pl-10 focus:border-emerald-400 focus:ring-emerald-500"
+                    />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-white/10 bg-[#0b1c2b] flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPartialDayDrawer(false)}
+                  className="border-white/20 text-slate-100 hover:bg-white/10"
+                >
+                  Cancel
+                </Button>
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                  Request
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

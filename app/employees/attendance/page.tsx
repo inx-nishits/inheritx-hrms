@@ -69,6 +69,18 @@ type AttendanceRequest = {
   date: string;
   status: string;
   reason?: string;
+  note?: string;
+  requestedOn?: string;
+  attachments?: string;
+  lastActionBy?: string;
+  nextApprover?: string;
+  actionDate?: string;
+  notifiedTo?: string;
+  durationLabel?: string;
+  requesterName?: string;
+  requesterAvatar?: string;
+  approvedBy?: string;
+  approvedOn?: string;
 };
 
 export default function EmployeeAttendancePage() {
@@ -84,8 +96,58 @@ export default function EmployeeAttendancePage() {
   const [showPartialDayModal, setShowPartialDayModal] = useState(false);
   const [showRegularizeModal, setShowRegularizeModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const mockPartialRequests: AttendanceRequest[] = [
+    {
+      id: 'pdr-1',
+      type: 'Partial Day - Late Arrival',
+      date: 'Tue, 18 Nov 2025',
+      requestedOn: '18 Nov 2025 09:15 AM',
+      status: 'Approved',
+      reason: 'Traffic delay due to road closure near office route.',
+      note: 'Reached by 10:15 AM; completed tasks post lunch.',
+      attachments: '-',
+      actionDate: '18 Nov 2025',
+      notifiedTo: 'Aiyub Munshi, Ram Jangid, Meera Tank',
+      durationLabel: '1 Day',
+      requesterName: 'Yesha Patel',
+      approvedBy: 'Aiyub Munshi',
+      approvedOn: '18 Nov 2025 10:34 AM',
+    },
+    {
+      id: 'pdr-2',
+      type: 'Partial Day - Intervening Time-off',
+      date: 'Fri, 22 Nov 2025',
+      requestedOn: '21 Nov 2025 04:20 PM',
+      status: 'Pending',
+      reason: 'Mid-day doctor appointment; will work extra in evening.',
+      note: 'Stepping out 2:00 PM - 3:30 PM.',
+      attachments: '-',
+      nextApprover: 'People Ops',
+      durationLabel: 'Half Day',
+      requesterName: 'Yesha Patel',
+    },
+    {
+      id: 'pdr-3',
+      type: 'Partial Day - Leaving Early',
+      date: 'Mon, 24 Nov 2025',
+      requestedOn: '24 Nov 2025 08:45 AM',
+      status: 'Rejected',
+      reason: 'Need to leave early for family event.',
+      note: 'Leaving at 4:30 PM, can handoff before leaving.',
+      attachments: '-',
+      lastActionBy: 'Manager',
+      actionDate: '24 Nov 2025',
+      durationLabel: 'Half Day',
+      requesterName: 'Yesha Patel',
+      approvedBy: 'Manager',
+      approvedOn: '24 Nov 2025 11:00 AM',
+    },
+  ];
+
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>([]);
-  const [attendanceRequests, setAttendanceRequests] = useState<AttendanceRequest[]>([]);
+  const [attendanceRequests, setAttendanceRequests] = useState<AttendanceRequest[]>(mockPartialRequests);
+  const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null);
+  const [showRequestDetails, setShowRequestDetails] = useState(false);
   const [logsPagination, setLogsPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const [requestsPagination, setRequestsPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const [isLoading, setIsLoading] = useState(false);
@@ -1103,7 +1165,7 @@ export default function EmployeeAttendancePage() {
                 </div>
               )
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {isLoading ? (
                   <div className="flex justify-center py-10">
                     <Loading />
@@ -1114,63 +1176,132 @@ export default function EmployeeAttendancePage() {
                     message={error}
                     onRetry={fetchAttendanceData}
                   />
-                ) : attendanceRequests.length === 0 ? (
-                  <div className="text-center text-muted-foreground text-sm py-6">
-                    No attendance requests found.
-                  </div>
-                ) : (
-                  <>
-                    {attendanceRequests.map((req, idx) => (
-                      <motion.div
-                        key={req.id ?? idx}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-3 border border-border/40 rounded-[8px] hover:bg-accent/30 hover:border-primary/20 transition-all"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="info" className="text-[10px] px-1.5 py-0.5">{req.type}</Badge>
-                            <span className="text-xs font-semibold text-foreground">{req.date}</span>
-                          </div>
-                          <Badge variant={req.status === 'Approved' ? 'success' : 'warning'} className="text-[10px] px-1.5 py-0.5">
-                            {req.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1.5">{req.reason}</p>
-                      </motion.div>
-                    ))}
+                ) : (() => {
+                  const partialRequests = attendanceRequests.filter((r) =>
+                    (r.type || '').toLowerCase().includes('partial')
+                  );
 
-                    {requestsPagination.total > requestsPagination.limit && (
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="text-xs text-muted-foreground">
-                          Page {requestsPagination.page} of {totalRequestPages}
-                        </span>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={requestsPagination.page <= 1 || isLoading}
-                            onClick={() =>
-                              setRequestsPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
-                            }
-                          >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={requestsPagination.page >= totalRequestPages || isLoading}
-                            onClick={() =>
-                              setRequestsPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-                            }
-                          >
-                            Next
-                          </Button>
+                  const displayedRequests = partialRequests.length > 0 ? partialRequests : mockPartialRequests;
+
+                  if (displayedRequests.length === 0) {
+                    return (
+                      <div className="text-center text-muted-foreground text-sm py-6">
+                        No partial day requests found.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-semibold text-foreground">Partial Day Requests</div>
+                        <div className="text-xs text-muted-foreground">
+                          Showing {displayedRequests.length} request{displayedRequests.length !== 1 ? 's' : ''}
                         </div>
                       </div>
-                    )}
-                  </>
-                )}
+
+                      <div className="border border-border/50 rounded-[10px] overflow-hidden shadow-sm">
+                        <div className="grid grid-cols-12 gap-3 px-4 py-2 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/50">
+                          <div className="col-span-2">Date</div>
+                          <div className="col-span-2">Request Type</div>
+                          <div className="col-span-2">Requested On</div>
+                          <div className="col-span-1">Attachments</div>
+                          <div className="col-span-2">Note</div>
+                          <div className="col-span-1">Status</div>
+                          <div className="col-span-1">Actions</div>
+                        </div>
+
+                        <div className="divide-y divide-border/40">
+                          {displayedRequests.map((req, idx) => (
+                            <motion.div
+                              key={req.id ?? idx}
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.02 }}
+                              className="grid grid-cols-12 gap-3 px-4 py-3 bg-card hover:bg-accent/30 transition-colors"
+                            >
+                              <div className="col-span-2 flex flex-col text-sm text-foreground">
+                                <span className="font-semibold">{req.date || '-'}</span>
+                                {req.actionDate && (
+                                  <span className="text-[11px] text-muted-foreground">on {req.actionDate}</span>
+                                )}
+                              </div>
+
+                              <div className="col-span-2 flex items-center gap-2">
+                                <Badge variant="info" className="text-[11px] px-2 py-0.5">{req.type || 'Partial Day'}</Badge>
+                              </div>
+
+                              <div className="col-span-2 text-sm text-foreground">
+                                {req.requestedOn || req.date || '-'}
+                              </div>
+
+                              <div className="col-span-1 flex items-center gap-1 text-sm text-foreground">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span>{req.attachments || '-'}</span>
+                              </div>
+
+                              <div className="col-span-2 text-sm text-muted-foreground line-clamp-2">
+                                {req.note || req.reason || '-'}
+                              </div>
+
+                              <div className="col-span-1">
+                                <Badge
+                                  variant={req.status === 'Approved' ? 'success' : req.status === 'Rejected' ? 'destructive' : 'warning'}
+                                  className="text-[11px] px-2 py-0.5"
+                                >
+                                  {req.status || '-'}
+                                </Badge>
+                              </div>
+
+                              <div className="col-span-1 flex items-center justify-end gap-2 text-sm text-muted-foreground">
+                                <button
+                                  className="p-1 rounded-md hover:bg-muted/70 transition-colors"
+                                  title="View details"
+                                  onClick={() => {
+                                    setSelectedRequest(req);
+                                    setShowRequestDetails(true);
+                                  }}
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {requestsPagination.total > requestsPagination.limit && (
+                        <div className="flex items-center justify-between pt-2">
+                          <span className="text-xs text-muted-foreground">
+                            Page {requestsPagination.page} of {totalRequestPages}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={requestsPagination.page <= 1 || isLoading}
+                              onClick={() =>
+                                setRequestsPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
+                              }
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={requestsPagination.page >= totalRequestPages || isLoading}
+                              onClick={() =>
+                                setRequestsPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+                              }
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </CardContent>
@@ -1180,6 +1311,95 @@ export default function EmployeeAttendancePage() {
 
 
         {/* Modals */}
+      <Modal
+        isOpen={showRequestDetails && !!selectedRequest}
+        onClose={() => {
+          setShowRequestDetails(false);
+          setSelectedRequest(null);
+        }}
+        title="Attendance Request Details"
+        size="lg"
+      >
+        {selectedRequest && (
+          <div className="space-y-5">
+            <div className="border border-border/40 rounded-lg p-4 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {selectedRequest.requesterName || 'You'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Requested on {selectedRequest.requestedOn || selectedRequest.date}
+                  </p>
+                </div>
+                <Badge variant="info" className="text-[11px] px-2 py-0.5">
+                  {selectedRequest.type || 'Partial Day'}
+                </Badge>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-foreground">
+                <div className="p-3 rounded-md border border-border/30 bg-background/60">
+                  <p className="text-xs text-muted-foreground">Date</p>
+                  <p className="font-semibold">{selectedRequest.date}</p>
+                </div>
+                <div className="p-3 rounded-md border border-border/30 bg-background/60">
+                  <p className="text-xs text-muted-foreground">Duration</p>
+                  <p className="font-semibold">{selectedRequest.durationLabel || '-'}</p>
+                </div>
+                <div className="p-3 rounded-md border border-border/30 bg-background/60">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge
+                    variant={selectedRequest.status === 'Approved' ? 'success' : selectedRequest.status === 'Rejected' ? 'destructive' : 'warning'}
+                    className="mt-1 text-[11px] px-2 py-0.5"
+                  >
+                    {selectedRequest.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="mt-4 text-sm text-foreground space-y-1.5">
+                <p className="font-semibold">Note</p>
+                <p className="text-muted-foreground">{selectedRequest.note || selectedRequest.reason || '-'}</p>
+              </div>
+
+              {selectedRequest.notifiedTo && (
+                <div className="mt-4 text-sm">
+                  <p className="font-semibold text-foreground">Notified To</p>
+                  <p className="text-muted-foreground">{selectedRequest.notifiedTo}</p>
+                </div>
+              )}
+
+              {selectedRequest.approvedBy && (
+                <div className="mt-4 text-sm flex items-start gap-2">
+                  <div className="mt-0.5">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Approved by {selectedRequest.approvedBy}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedRequest.approvedOn || selectedRequest.actionDate || ''}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-foreground">Add comment</label>
+              <div className="mt-2 flex items-center rounded-md border border-border/40 bg-background/60">
+                <input
+                  type="text"
+                  placeholder="Add comment"
+                  className="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none"
+                />
+                <button className="px-3 py-2 text-muted-foreground hover:text-foreground">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
         <Modal isOpen={showWFHModal} onClose={() => setShowWFHModal(false)} title="Request Work From Home" size="md">
           <form className="space-y-4">
             <div>
